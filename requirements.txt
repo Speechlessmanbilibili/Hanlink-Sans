@@ -1,1 +1,2 @@
 fonttools[brotli]>=4.60
+Pillow>=10
