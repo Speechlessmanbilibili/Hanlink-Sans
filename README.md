@@ -11,16 +11,18 @@
 
 本字体面向中西文混排和 Word 使用：西文主体取自 Hanken Grotesk，中文主体取自 Noto Sans SC；中文标点默认采用 Noto Sans SC 风格，破折号采用煮豆派生的连续形式，并保留竖排替换。
 
-## Files
+## Downloads
 
-- `fonts/static/`: nine static TTF weights, Thin 100 through Black 900.
-- `fonts/variable/HanlinkSans-Variable.ttf`: variable TTF, `wght` 100–900, default 400.
+Compiled fonts are distributed through GitHub Releases rather than committed to the source repository:
+
+- `Hanlink-Sans-v1.0.1-Static.zip`: nine static TTF weights, Thin 100 through Black 900.
+- `Hanlink-Sans-v1.0.1-Variable.zip`: variable TTF, `wght` 100–900, default 400.
 
 The static and variable builds share the typographic family name **Hanlink Sans**. For Windows/Office compatibility, static non-Regular/Bold faces use the conventional legacy nameID 1 weight-linking scheme while all faces use `Hanlink Sans` as typographic family nameID 16.
 
 ### Installation note
 
-Do **not** install the static family and the variable font at the same time on Windows. Because they deliberately share the same family name, font enumeration can treat them as duplicate faces. Choose either `fonts/static/` or the variable TTF.
+Do **not** install the static family and the variable font at the same time on Windows. Because they deliberately share the same family name, font enumeration can treat them as duplicate faces. Choose either the static release package or the variable-font release package.
 
 ## OpenType behavior
 
