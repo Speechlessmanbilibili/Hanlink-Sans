@@ -1,5 +1,17 @@
 # FONTLOG
 
+## 1.001 — 2026-08-23
+
+- Restored Hanken Grotesk Latin OpenType behavior across mixed and Western language systems, including standard/discretionary ligatures, kerning, fractions, ordinals, superscripts/subscripts, stylistic sets, and language-specific `locl`.
+- Fixed merged language systems where feature records existed in the font but were not reachable from the active script/language path.
+- Reconnected Noto Sans SC `GSUB` and `GPOS` rules across Hanken/Bridge-owned public glyphs while keeping Hanken as the Latin design.
+- Fixed post-subset hidden-Noto glyph-name mapping so source lookups reliably target the intended merged glyphs.
+- Added script-sensitive remapping for shared Greek, Cyrillic combining-mark, and Bopomofo characters to avoid mixed-source seams.
+- Western-script shared punctuation now uses Hanken forms by default through `locl`; explicit Simplified Chinese keeps CJK punctuation.
+- English repeated em dashes remain separate Hanken em dashes; default/CJK `——` and `———` retain the continuous Bridge behavior.
+- Preserved the shared upstream TrueType `prep` program that was previously removed during subsetting.
+- Expanded structural and RAQM rendering regression tests for Hanken, Noto, Bridge, horizontal/vertical dashes, and cross-source layout behavior.
+
 ## 1.000 — 2026-08-23
 
 - Initial Hanlink Sans release.
