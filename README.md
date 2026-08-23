@@ -13,16 +13,16 @@
 
 ## Downloads
 
-Prebuilt fonts are distributed through **GitHub Releases** rather than committed directly to the source repository. Release assets include:
+Compiled fonts are distributed from GitHub Releases rather than committed to the repository:
 
-- nine static TTF weights, Thin 100 through Black 900;
-- one variable TTF with `wght` 100–900, default 400.
+- `Hanlink-Sans-v1.0.0-Static.zip`: nine static TTF weights, Thin 100 through Black 900;
+- `Hanlink-Sans-v1.0.0-Variable.zip`: variable TTF, `wght` 100–900, default 400.
 
 The static and variable builds share the typographic family name **Hanlink Sans**. For Windows/Office compatibility, static non-Regular/Bold faces use the conventional legacy nameID 1 weight-linking scheme while all faces use `Hanlink Sans` as typographic family nameID 16.
 
 ### Installation note
 
-Do **not** install the static family and the variable font at the same time on Windows. Because they deliberately share the same family name, font enumeration can treat them as duplicate faces. Choose either the static family or the variable TTF.
+Do **not** install the static family and the variable font at the same time on Windows. Because they deliberately share the same family name, font enumeration can treat them as duplicate faces. Choose either the static release package or the variable-font release package.
 
 ## OpenType behavior
 
@@ -31,7 +31,7 @@ Do **not** install the static family and the variable font at the same time on W
 - `ccmp` joins repeated `U+2014` into continuous dash glyphs.
 - `locl` provides an `ENG` path for shared punctuation using Hanken forms when the application supplies English language metadata.
 - `vert` / `vrt2` and `vhea` / `vmtx` are included for vertical CJK layout.
-- The variable build uses the Regular vertical metrics across the weight axis.
+- The variable build uses the Regular vertical metrics across the weight axis. This is compatible with the source Noto Sans SC VF, which itself does not provide a separate `VVAR` table.
 
 Language-aware forms depend on the application supplying language information. A font cannot reliably infer whether a shared-codepoint quotation mark or em dash is Chinese or English from surrounding text alone.
 
@@ -39,8 +39,8 @@ Language-aware forms depend on the application supplying language information. A
 
 Hanlink Sans is licensed under the **SIL Open Font License 1.1 (OFL-1.1)**. It is a modified/combined font and is **not** an official release of any upstream project.
 
-Upstream Reserved Font Names present in the supplied licenses are `Source`, `Zhudou`, and `煮豆`. The primary family name **Hanlink Sans** does not use those reserved names. See `OFL.txt` and `THIRD_PARTY_NOTICES.md`.
+Upstream Reserved Font Names present in the supplied licenses are `Source`, `Zhudou`, and `煮豆`. The primary family name **Hanlink Sans** does not use those reserved names. See `OFL.txt`, `THIRD_PARTY_NOTICES.md`, and `licenses/`.
 
 ## Building
 
-Source archive hashes are recorded in `SOURCES.md`; the merge strategy and reproducibility notes are documented in `BUILDING.md`.
+The repository includes the exact reference scripts used for this build and source archive hashes in `SOURCES.md`.

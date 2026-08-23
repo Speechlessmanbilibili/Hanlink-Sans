@@ -11,3 +11,4 @@
 - Restored CJK vertical metrics and `vert` / `vrt2`, including dedicated vertical dash forms.
 - Added nine static TTF weights and a `wght` 100–900 variable TTF.
 - Family renamed from the development name “Hanken Noto Sans” to **Hanlink Sans** before public packaging.
+- Added regression checks for horizontal/vertical dash shaping and language-sensitive behavior.
