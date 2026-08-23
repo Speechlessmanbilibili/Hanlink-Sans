@@ -8,6 +8,7 @@ from fontTools.varLib.instancer import instantiateVariableFont,AxisTriple
 from fontTools.merge import Merger,computeMegaGlyphOrder
 from fontTools.ttLib.tables._f_v_a_r import Axis,NamedInstance
 from fontTools.otlLib.builder import buildStatTable
+from layout_compat import fix_hanlink_language_systems
 
 REPO=Path(__file__).resolve().parents[1]
 WORKSPACE=Path(os.environ.get('HANLINK_BUILD_WORKSPACE', REPO.parent))
@@ -15,22 +16,29 @@ SRC=Path(os.environ.get('HANLINK_UPSTREAM_DIR', WORKSPACE/'wordfont_build'))
 BRIDGE=Path(os.environ.get('HANLINK_BRIDGE_DIR', WORKSPACE/'CJKPunctBridge-v2'))
 OUT=REPO/'fonts/variable'; WORK=Path(os.environ.get('HANLINK_VF_BUILD_DIR', WORKSPACE/'HanlinkSans-build/vf'))
 OUT.mkdir(parents=True,exist_ok=True); WORK.mkdir(parents=True,exist_ok=True)
-FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.000'
+FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.001'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
 HVAR=SRC/'hanken/HankenGrotesk-VariableFont_wght.ttf'; NVAR=SRC/'noto/NotoSansSC-VariableFont_wght.ttf'; BVAR=BRIDGE/'fonts/variable/CJKPunctBridge-Variable.ttf'
 HREG=SRC/'hanken/static/HankenGrotesk-Regular.ttf'; NREG=SRC/'noto/static/NotoSansSC-Regular.ttf'; BREG=BRIDGE/'fonts/static/CJKPunctBridge-Regular.ttf'
 COPYRIGHT=("Portions Copyright 2021 The Hanken Grotesk Project Authors. Portions Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'. Portions Copyright 2022 Buernia, with Reserved Font Names 'Zhudou' and '煮豆'; portions Copyright 2015 Google Inc. Hanlink Sans is a modified/combined font distributed under SIL Open Font License 1.1.")
-b=TTFont(BVAR); h=TTFont(HVAR); n=TTFont(NVAR); BC=set(b.getBestCmap()); HC=set(h.getBestCmap())-BC; NC=set(n.getBestCmap())-BC-HC; b.close();h.close();n.close(); print('split',len(BC),len(HC),len(NC),flush=True)
+b=TTFont(BVAR); h=TTFont(HVAR); n=TTFont(NVAR); BC=set(b.getBestCmap()); HALL=set(h.getBestCmap()); NALL=set(n.getBestCmap()); HC=HALL; NC=NALL; b.close();h.close();n.close(); print('split',len(BC),len(HC),len(NC),flush=True)
 
 def subset(f,cps,layout=True):
-    o=Options(); o.layout_features=['*'] if layout else []; o.name_IDs=['*'];o.name_legacy=True;o.name_languages=['*'];o.notdef_glyph=True;o.notdef_outline=True;o.recommended_glyphs=True;o.glyph_names=True;o.hinting=False
+    o=Options(); o.layout_features=['*'] if layout else []; o.name_IDs=['*'];o.name_legacy=True;o.name_languages=['*'];o.notdef_glyph=True;o.notdef_outline=True;o.recommended_glyphs=True;o.glyph_names=True;o.hinting=True
     s=Subsetter(options=o);s.populate(unicodes=cps);s.subset(f);return f
 
-def subset_var(f,cps,path):
+def remove_cmap_codepoints(f,cps):
+    if 'cmap' not in f: return
+    for table in f['cmap'].tables:
+        if hasattr(table,'cmap'):
+            for cp in cps: table.cmap.pop(cp,None)
+
+def subset_var(f,cps,path,remove_cps=None):
     if 'gvar' in f:
         gv=f['gvar'].variations
         for gn in f.getGlyphOrder(): gv.setdefault(gn,[])
     subset(f,cps,True)
+    if remove_cps: remove_cmap_codepoints(f,remove_cps)
     for t in ('HVAR','VVAR','MVAR','avar','STAT','BASE','GDEF','GPOS','GSUB','vhea','vmtx','VORG'):
         if t in f: del f[t]
     f.save(path);f.close()
@@ -38,8 +46,8 @@ def subset_var(f,cps,path):
 def prep_var():
     bp=WORK/'bridge-vf.ttf'; hp=WORK/'hanken-vf.ttf'; np=WORK/'noto-vf.ttf'
     if not bp.exists(): print('bridge var subset',flush=True);subset_var(TTFont(BVAR),BC,bp)
-    if not hp.exists(): print('hanken var subset',flush=True);subset_var(TTFont(HVAR),HC,hp)
-    if not np.exists(): print('noto var rebase/subset',flush=True); nf=instantiateVariableFont(TTFont(NVAR),{'wght':AxisTriple(100,400,900)},inplace=False,optimize=False);subset_var(nf,NC,np)
+    if not hp.exists(): print('hanken var subset',flush=True);subset_var(TTFont(HVAR),HC,hp,BC)
+    if not np.exists(): print('noto var rebase/subset',flush=True); nf=instantiateVariableFont(TTFont(NVAR),{'wght':AxisTriple(100,400,900)},inplace=False,optimize=False);subset_var(nf,NC,np,BC|HALL)
     return [bp,hp,np]
 
 def add_vertical_to_hanken(h,noto):
@@ -76,28 +84,42 @@ def use_noto_metrics(f,n):
         for a in ('ascent','descent','lineGap','caretSlopeRise','caretSlopeRun','caretOffset','metricDataFormat'):
             if hasattr(n['vhea'],a):setattr(f['vhea'],a,getattr(n['vhea'],a))
 
-varpaths=prep_var();orig=[];ren=[]
-for p in varpaths:
-    f=TTFont(p,lazy=True);o=list(f.getGlyphOrder());f.close();orig.append(o);ren.append(list(o))
-dummy=Merger();computeMegaGlyphOrder(dummy,ren);maps=[dict(zip(o,r)) for o,r in zip(orig,ren)]
-# Recreate unsaved 400 base so glyph names exactly match merge's mega order.
-print('build unsaved Regular base',flush=True)
+varpaths=prep_var()
+print('reconstruct static glyph-ID order',flush=True)
 bp=WORK/'bridge-400.ttf'; hp=WORK/'hanken-400.ttf'; np=WORK/'noto-400.ttf'
-if not bp.exists(): shutil.copy(BREG,bp)
-if not hp.exists():
-    hf=subset(TTFont(HREG),HC,True); nf_full=TTFont(NREG); add_vertical_to_hanken(hf,nf_full); hf.save(hp); hf.close(); nf_full.close()
-if not np.exists():
-    nf=subset(TTFont(NREG),NC,True); nf.save(np); nf.close()
-nf_full=TTFont(NREG); base=Merger().merge([str(bp),str(hp),str(np)]); use_noto_metrics(base,nf_full); set_names(base); nf_full.close()
-print('orders',len(base.getGlyphOrder()),len(dummy.glyphOrder),base.getGlyphOrder()==dummy.glyphOrder,flush=True)
-assert base.getGlyphOrder()==dummy.glyphOrder
-print('combine gvar',flush=True);combined={}
-for p,mp in zip(varpaths,maps):
-    f=TTFont(p);gv=f['gvar'].variations;count=0
+shutil.copy(BREG,bp)
+hf=subset(TTFont(HREG),HC,True); remove_cmap_codepoints(hf,BC); nf_full=TTFont(NREG); add_vertical_to_hanken(hf,nf_full); hf.save(hp); hf.close(); nf_full.close()
+nf=subset(TTFont(NREG),NC,True); remove_cmap_codepoints(nf,BC|HALL); nf.save(np); nf.close()
+static_paths=[bp,hp,np]; static_orig=[]; static_ren=[]
+for pth in static_paths:
+    sf=TTFont(pth,lazy=True); order=list(sf.getGlyphOrder()); sf.close(); static_orig.append(order); static_ren.append(list(order))
+static_dummy=Merger(); computeMegaGlyphOrder(static_dummy,static_ren)
+static_maps=[dict(zip(o,r)) for o,r in zip(static_orig,static_ren)]
+mem_base=Merger().merge([str(x) for x in static_paths])
+mem_order=list(mem_base.getGlyphOrder()); mem_base.close()
+assert mem_order==static_dummy.glyphOrder
+mem_gid={gn:i for i,gn in enumerate(mem_order)}
+
+static_regular=REPO/f'fonts/static/{PS}-Regular.ttf'
+base=TTFont(static_regular)
+saved_order=list(base.getGlyphOrder())
+assert len(saved_order)==len(mem_order)
+print('combine gvar by static GID',flush=True);combined={}
+for i,pth in enumerate(varpaths):
+    f=TTFont(pth); gv=f['gvar'].variations; count=0; missing=[]
+    smap=static_maps[i]
     for old,vs in gv.items():
-        new=mp.get(old)
-        if new is not None and vs:combined[new]=deepcopy(vs);count+=1
-    print(p.name,count,flush=True);f.close();gc.collect()
+        mem_name=smap.get(old)
+        gid=mem_gid.get(mem_name) if mem_name is not None else None
+        if gid is None:
+            if vs: missing.append(old)
+            continue
+        if vs:
+            combined[saved_order[gid]]=deepcopy(vs); count+=1
+    print(pth.name,count,'missing',len(missing),missing[:8],flush=True)
+    assert not missing
+    f.close();gc.collect()
+set_names(base)
 gvar=newTable('gvar');gvar.version=1;gvar.reserved=0;gvar.variations=combined;base['gvar']=gvar
 fv=newTable('fvar');fv.axes=[];fv.instances=[];axis=Axis();axis.axisTag='wght';axis.minValue=100.;axis.defaultValue=400.;axis.maxValue=900.;axis.flags=0;axis.axisNameID=base['name'].addName('Weight',platforms=((3,1,0x409),(1,0,0)));fv.axes.append(axis)
 for w,s in WEIGHTS.items():
@@ -106,7 +128,6 @@ base['fvar']=fv
 try:buildStatTable(base,[dict(tag='wght',name='Weight',values=[dict(value=w,name=s,flags=0x2 if w==400 else 0) for w,s in WEIGHTS.items()])])
 except Exception as e:print('STAT',e,flush=True)
 out=OUT/f'{PS}-Variable.ttf';base.save(out,reorderTables=True);base.close();print('saved',out.stat().st_size/1048576,'MiB',flush=True)
-# validate widths at endpoints/default against static builds
 vf0=TTFont(out);print('validate VF',len(vf0.getGlyphOrder()),'v', 'vhea' in vf0,'vmtx' in vf0,'gvar',sum(bool(v) for v in vf0['gvar'].variations.values()),[(a.minValue,a.defaultValue,a.maxValue) for a in vf0['fvar'].axes],flush=True);vf0.close()
 for w,s in [(100,'Thin'),(400,'Regular'),(900,'Black')]:
     vf=TTFont(out);inst=instantiateVariableFont(vf,{'wght':w},inplace=False,optimize=True,static=True);st=TTFont(REPO/f'fonts/static/{PS}-{s}.ttf');ic=inst.getBestCmap();sc=st.getBestCmap();checks=[]
