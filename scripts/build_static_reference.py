@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from copy import deepcopy
 import gc, shutil, zipfile
 from fontTools.ttLib import TTFont,newTable
@@ -6,8 +7,11 @@ from fontTools.subset import Subsetter,Options
 from fontTools.merge import Merger
 from fontTools.otlLib.builder import buildStatTable
 
-ROOT=Path('/mnt/data'); SRC=ROOT/'wordfont_build'; BRIDGE=ROOT/'CJKPunctBridge-v2'
-OUT=ROOT/'HanlinkSans'; STATIC_OUT=OUT/'fonts/static'; WORK=ROOT/'HanlinkSans-build/static'
+REPO=Path(__file__).resolve().parents[1]
+WORKSPACE=Path(os.environ.get('HANLINK_BUILD_WORKSPACE', REPO.parent))
+SRC=Path(os.environ.get('HANLINK_UPSTREAM_DIR', WORKSPACE/'wordfont_build'))
+BRIDGE=Path(os.environ.get('HANLINK_BRIDGE_DIR', WORKSPACE/'CJKPunctBridge-v2'))
+OUT=REPO; STATIC_OUT=OUT/'fonts/static'; WORK=Path(os.environ.get('HANLINK_STATIC_BUILD_DIR', WORKSPACE/'HanlinkSans-build/static'))
 for p in [OUT,STATIC_OUT,WORK]: p.mkdir(parents=True,exist_ok=True)
 FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.000'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
