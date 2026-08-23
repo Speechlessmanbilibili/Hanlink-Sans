@@ -8,13 +8,15 @@ Hanlink Sans is built from three OFL-licensed upstream font families. Exact sour
 - Noto Sans SC: Han/CJK coverage, default CJK punctuation, metrics and vertical layout data.
 - Zhudou Sans: CJK em-dash outlines, including continuous two-em/three-em and vertical dash forms.
 
+Hanlink Sans uses the same audited punctuation layer as CJK Punct Bridge. That layer resolves Noto's Simplified-Chinese `locl` dash targets and their true `vert` targets from GSUB, rather than assuming glyph names.
+
 ## Static family
 
 Nine static TTF faces are produced at weights 100–900.
 
 For each weight:
 
-1. Build or load the matching CJK punctuation bridge layer.
+1. Build or load the matching fixed CJK punctuation bridge layer.
 2. Reserve punctuation code points covered by that bridge.
 3. Take remaining Latin/Western coverage from Hanken Grotesk.
 4. Take remaining CJK coverage from Noto Sans SC.
@@ -29,9 +31,11 @@ The variable build uses the same Unicode split and family naming, preserving a `
 
 - Default punctuation is CJK-oriented.
 - Default `U+2014` uses the Zhudou-derived CJK form.
-- Repeated `U+2014` uses `ccmp` to form continuous two-em/three-em dashes.
+- Repeated `U+2014` uses `ccmp` to form continuous two-em/three-em dashes in default/CJK language systems.
 - `ENG` language-system `locl` alternates switch shared punctuation to Hanken-derived forms when language metadata is supplied.
+- The `ENG` path deliberately omits the CJK continuous-dash `ccmp`, so repeated English em dashes remain separate Hanken glyphs.
 - `vert`, `vrt2`, `vhea`, and `vmtx` are retained for CJK vertical layout.
+- Regression scripts verify that horizontal Chinese dash runs stay horizontal, vertical runs receive vertical glyphs, and English runs do not ligate into the CJK forms.
 
 ## Distribution
 
