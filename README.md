@@ -43,4 +43,4 @@ Upstream Reserved Font Names present in the supplied licenses are `Source`, `Zhu
 
 ## Building
 
-The repository includes reference build scripts and source archive hashes in `SOURCES.md`.
+Source archive hashes are recorded in `SOURCES.md`; the merge strategy and reproducibility notes are documented in `BUILDING.md`.
