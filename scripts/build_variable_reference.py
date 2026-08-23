@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 from copy import deepcopy
 import gc, shutil
 from fontTools.ttLib import TTFont,newTable
@@ -8,7 +9,11 @@ from fontTools.merge import Merger,computeMegaGlyphOrder
 from fontTools.ttLib.tables._f_v_a_r import Axis,NamedInstance
 from fontTools.otlLib.builder import buildStatTable
 
-ROOT=Path('/mnt/data'); SRC=ROOT/'wordfont_build'; BRIDGE=ROOT/'CJKPunctBridge-v2'; OUT=ROOT/'HanlinkSans/fonts/variable'; WORK=ROOT/'HanlinkSans-build/vf'
+REPO=Path(__file__).resolve().parents[1]
+WORKSPACE=Path(os.environ.get('HANLINK_BUILD_WORKSPACE', REPO.parent))
+SRC=Path(os.environ.get('HANLINK_UPSTREAM_DIR', WORKSPACE/'wordfont_build'))
+BRIDGE=Path(os.environ.get('HANLINK_BRIDGE_DIR', WORKSPACE/'CJKPunctBridge-v2'))
+OUT=REPO/'fonts/variable'; WORK=Path(os.environ.get('HANLINK_VF_BUILD_DIR', WORKSPACE/'HanlinkSans-build/vf'))
 OUT.mkdir(parents=True,exist_ok=True); WORK.mkdir(parents=True,exist_ok=True)
 FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.000'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
@@ -104,6 +109,6 @@ out=OUT/f'{PS}-Variable.ttf';base.save(out,reorderTables=True);base.close();prin
 # validate widths at endpoints/default against static builds
 vf0=TTFont(out);print('validate VF',len(vf0.getGlyphOrder()),'v', 'vhea' in vf0,'vmtx' in vf0,'gvar',sum(bool(v) for v in vf0['gvar'].variations.values()),[(a.minValue,a.defaultValue,a.maxValue) for a in vf0['fvar'].axes],flush=True);vf0.close()
 for w,s in [(100,'Thin'),(400,'Regular'),(900,'Black')]:
-    vf=TTFont(out);inst=instantiateVariableFont(vf,{'wght':w},inplace=False,optimize=True,static=True);st=TTFont(ROOT/f'HanlinkSans/fonts/static/{PS}-{s}.ttf');ic=inst.getBestCmap();sc=st.getBestCmap();checks=[]
+    vf=TTFont(out);inst=instantiateVariableFont(vf,{'wght':w},inplace=False,optimize=True,static=True);st=TTFont(REPO/f'fonts/static/{PS}-{s}.ttf');ic=inst.getBestCmap();sc=st.getBestCmap();checks=[]
     for cp in (0x41,0x61,0x4E2D,0xFF0C,0x2014):checks.append((hex(cp),inst['hmtx'].metrics[ic[cp]],st['hmtx'].metrics[sc[cp]]))
     print('widthcheck',w,checks,flush=True);inst.close();vf.close();st.close()
