@@ -57,7 +57,10 @@ def _glyph_signature(font,glyph):
 
 def audit(path):
     f=TTFont(path); cmap=f.getBestCmap()
-    unique_id='HanlinkSans-VF' if 'fvar' in f else path.stem
+    if 'fvar' in f:
+        unique_id='HanlinkSans-Italic-VF' if 'Italic' in path.name else 'HanlinkSans-VF'
+    else:
+        unique_id=path.stem
     audit_metadata(f,unique_id)
     assert 'vhea' in f and 'vmtx' in f
     assert 'prep' in f, (path, 'missing shared upstream TrueType prep program')
@@ -116,6 +119,12 @@ def audit(path):
         axis=next(a for a in f['fvar'].axes if a.axisTag=='wght')
         assert (axis.minValue,axis.defaultValue,axis.maxValue)==(100.0,400.0,900.0)
         assert len(f['fvar'].instances)==9
+    italic=bool(f['OS/2'].fsSelection & 1)
+    if italic:
+        assert f['head'].macStyle & 2,(path,'italic macStyle missing')
+        assert f['post'].italicAngle<0,(path,'italicAngle not negative')
+        sub=f['name'].getDebugName(2)
+        assert sub and sub.endswith('Italic'),(path,'subfamily',sub)
     f.close()
 
 def audit_hanken_provenance(path,source_path):
@@ -135,8 +144,11 @@ if __name__=='__main__':
     import sys
     root=Path(__file__).resolve().parents[1]
     hanken=root/'sources/hanken/static/HankenGrotesk-Regular.ttf'
+    hanken_italic=root/'sources/hanken/static/HankenGrotesk-Italic-Regular.ttf'
     for arg in sys.argv[1:]:
         path=Path(arg);audit(path)
         if hanken.exists() and path.name in {'HanlinkSans-Regular.ttf','HanlinkSans-Variable.ttf'}:
             audit_hanken_provenance(path,hanken)
+        if hanken_italic.exists() and path.name in {'HanlinkSans-Italic.ttf','HanlinkSans-Italic-Variable.ttf'}:
+            audit_hanken_provenance(path,hanken_italic)
         print('OK',arg)

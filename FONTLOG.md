@@ -1,5 +1,13 @@
 # FONTLOG
 
+## 1.200 — 2026-08-24
+
+- Added a full italic family alongside the upright family, published as a separate single-axis variable font (`HanlinkSans-Italic-Variable.ttf`) plus nine static italics, exactly mirroring the pinned Hanken Grotesk release layout.
+- Latin letters, digits, and Western punctuation in italics use the true Hanken Grotesk Italic designs from the pinned Google Fonts distribution; CJK characters and punctuation use a uniform synthetic 10-degree shear because no true CJK italic design exists.
+- The synthetic shear preserves simple-glyph point structure, flags, and end points so varLib masters stay interpolatable; composites are decomposed identically on every master; advance widths stay unchanged and left side bearings are recomputed from the new bounds.
+- CJK Punct Bridge italic sources are consumed from the sibling bridge v1.3.0 build (`CJK_PUNCT_ITALIC=1`).
+- Extended release audits to verify italic style bits, `italicAngle`, subfamily naming, and exact Hanken Italic provenance; the HarfBuzz regression gains an italic mode (`HANLINK_ITALIC_TEST=1`).
+
 ## 1.100 — 2026-08-24
 
 - Expanded Western punctuation from eight ambiguous marks to all 46 code points shared by CJK Punct Bridge and the pinned Google Fonts Hanken Grotesk source.

@@ -17,17 +17,23 @@ INPUTS = {
         "https://raw.githubusercontent.com/google/fonts/714891563e901b1a0d8ebcaaa003b01604793888/"
         "ofl/hankengrotesk/HankenGrotesk%5Bwght%5D.ttf",
         "813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f",
-        "HankenGrotesk",
+        "HankenGrotesk", False,
+    ),
+    "hanken/HankenGrotesk-Italic-VariableFont_wght.ttf": (
+        "https://raw.githubusercontent.com/google/fonts/714891563e901b1a0d8ebcaaa003b01604793888/"
+        "ofl/hankengrotesk/HankenGrotesk-Italic%5Bwght%5D.ttf",
+        "ae5731726ff75301a3cb63f2e98d1babc77d55ab09fb8e229ca75f5bd46fbe32",
+        "HankenGrotesk", True,
     ),
     "noto/NotoSansSC-VariableFont_wght.ttf": (
         "https://raw.githubusercontent.com/google/fonts/2894aab31764f10f29c421bdfd2340d3b382d384/"
         "ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
         "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
-        "NotoSansSC",
+        "NotoSansSC", False,
     ),
 }
 
-for relative, (url, expected, family) in INPUTS.items():
+for relative, (url, expected, family, italic) in INPUTS.items():
     path = SOURCES / relative
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
@@ -42,7 +48,10 @@ for relative, (url, expected, family) in INPUTS.items():
     static_dir.mkdir(exist_ok=True)
     variable = TTFont(path)
     for weight, style in WEIGHTS.items():
-        output = static_dir / f"{family}-{style}.ttf"
+        if italic:
+            output = static_dir / f"{family}-Italic-{style}.ttf"
+        else:
+            output = static_dir / f"{family}-{style}.ttf"
         instance = instantiateVariableFont(
             variable, {"wght": weight}, inplace=False, optimize=True, static=True
         )

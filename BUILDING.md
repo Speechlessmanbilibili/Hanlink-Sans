@@ -22,6 +22,14 @@ python scripts/check_dash_matrix.py fonts/static/*.ttf fonts/variable/*.ttf
 python scripts/render_regression.py
 ```
 
+The italic family is a separate build pass: set `HANLINK_ITALIC=1` for
+`build_static_reference.py` and `build_variable_reference.py` to emit the nine
+`fonts/static/HanlinkSans-*Italic.ttf` faces and
+`fonts/variable/HanlinkSans-Italic-Variable.ttf`. The CJK Punct Bridge sibling
+checkout must have been built with `CJK_PUNCT_ITALIC=1` first so its italic
+static faces exist. Regression scripts accept `HANLINK_ITALIC_TEST=1` to
+compare the italic Latin against the Hanken Grotesk Italic source.
+
 ## Inputs
 
 - Hanken Grotesk: Latin, ordinary Western digits and most Western symbols.
@@ -33,6 +41,15 @@ Hanlink Sans uses the same audited punctuation layer as CJK Punct Bridge. That l
 ## Static family
 
 Nine static TTF faces are produced at weights 100–900.
+
+The italic family mirrors that pipeline with `HANLINK_ITALIC=1`: Hanken
+Grotesk Italic supplies the true italic Latin designs, while Noto Sans SC and
+the CJK Punct Bridge italic sources get a uniform synthetic 10-degree shear
+(`shear_font()` in `build_static_reference.py`) because no true CJK italic
+design exists. Simple glyphs keep their exact point structure and flags so
+varLib masters stay interpolatable; composites are decomposed identically on
+every master; advance widths stay unchanged and left side bearings are
+recomputed from the new bounds.
 
 For each weight:
 
@@ -48,6 +65,13 @@ The static Google Fonts Noto instances and CJK Punct Bridge can retain a source-
 ## Variable font
 
 The variable build uses all nine audited static faces as designspace masters and lets fontTools varLib generate `gvar`/metric variation data. This avoids unsafe manual GID-based tuple grafting. It preserves a `wght` axis from 100 to 900 with 400 as the default; Regular's audited CJK layout tables remain the stable layout layer.
+
+The italic variable font is built the same way from the nine italic static
+faces (`HANLINK_ITALIC=1`), producing `HanlinkSans-Italic-Variable.ttf` with a
+`wght` axis from 100 to 900. Upright and italic are separate single-axis
+variable files sharing the typographic family name **Hanlink Sans**, exactly
+like the pinned Hanken Grotesk release (`HankenGrotesk[wght].ttf` +
+`HankenGrotesk-Italic[wght].ttf`).
 
 ## OpenType behavior
 

@@ -23,6 +23,7 @@ WORK.mkdir(parents=True, exist_ok=True)
 
 FAMILY = "Hanlink Sans"
 PS = "HanlinkSans"
+ITALIC = os.environ.get("HANLINK_ITALIC") == "1"
 WEIGHTS = {
     100: "Thin", 200: "ExtraLight", 300: "Light", 400: "Regular",
     500: "Medium", 600: "SemiBold", 700: "Bold", 800: "ExtraBold",
@@ -40,9 +41,11 @@ def setname(table, name_id, value):
 
 def set_names(font):
     names = font["name"]
+    sub = "Italic" if ITALIC else "Regular"
+    unique = f"{PS}-Italic-VF" if ITALIC else f"{PS}-VF"
     values = {
-        **project_names(f"{PS}-VF"), 1: FAMILY, 2: "Regular", 4: FAMILY,
-        6: PS, 16: FAMILY, 17: "Regular", 25: PS,
+        **project_names(unique), 1: FAMILY, 2: sub, 4: FAMILY + (f" {sub}" if ITALIC else ""),
+        6: f"{PS}{'-Italic' if ITALIC else ''}", 16: FAMILY, 17: sub, 25: PS,
     }
     for name_id, value in values.items():
         setname(names, name_id, value)
@@ -52,10 +55,14 @@ def set_names(font):
     for bit in (0, 5, 6, 9):
         os2.fsSelection &= ~(1 << bit)
     os2.fsSelection |= 1 << 6
+    if ITALIC:
+        os2.fsSelection |= 1 << 0
     font["head"].macStyle &= ~3
+    if ITALIC:
+        font["head"].macStyle |= 2
 
 
-paths = {weight: STATIC / f"{PS}-{style}.ttf" for weight, style in WEIGHTS.items()}
+paths = {weight: STATIC / (f"{PS}-Italic.ttf" if (ITALIC and weight == 400) else f"{PS}-{style}{'Italic' if ITALIC else ''}.ttf") for weight, style in WEIGHTS.items()}
 missing = [str(path) for path in paths.values() if not path.exists()]
 if missing:
     raise SystemExit("Missing static masters:\n" + "\n".join(missing))
@@ -68,6 +75,12 @@ for path in paths.values():
 if not all(order == orders[0] for order in orders[1:]):
     raise SystemExit("Static master glyph orders differ")
 
+def style_names():
+    return [
+        ("Italic" if (ITALIC and weight == 400) else style + (" Italic" if ITALIC else ""))
+        for weight, style in WEIGHTS.items()
+    ]
+
 designspace = DesignSpaceDocument()
 axis = AxisDescriptor()
 axis.name = "Weight"
@@ -77,12 +90,12 @@ axis.default = 400
 axis.maximum = 900
 designspace.addAxis(axis)
 
-for weight, style in WEIGHTS.items():
+for (weight, style), style_name in zip(WEIGHTS.items(), style_names()):
     source = SourceDescriptor()
     source.path = str(paths[weight])
     source.name = f"master.{weight}"
     source.familyName = FAMILY
-    source.styleName = style
+    source.styleName = style_name
     source.location = {"Weight": weight}
     if weight == 400:
         source.copyInfo = True
@@ -92,9 +105,9 @@ for weight, style in WEIGHTS.items():
     designspace.addSource(source)
 
     instance = InstanceDescriptor()
-    instance.name = style
+    instance.name = style_name
     instance.familyName = FAMILY
-    instance.styleName = style
+    instance.styleName = style_name
     instance.location = {"Weight": weight}
     designspace.addInstance(instance)
 
@@ -113,22 +126,25 @@ regular.close()
 
 set_names(variable)
 names = variable["name"]
-for instance, (weight, style) in zip(variable["fvar"].instances, WEIGHTS.items()):
+for instance, style_name in zip(variable["fvar"].instances, style_names()):
     instance.subfamilyNameID = names.addName(
-        style, platforms=((3, 1, 0x409), (1, 0, 0))
+        style_name, platforms=((3, 1, 0x409), (1, 0, 0))
     )
+stat_values = [dict(
+    tag="wght", name="Weight",
+    values=[
+        dict(value=weight, name=style_name, flags=0x2 if weight == 400 else 0)
+        for (weight, style), style_name in zip(WEIGHTS.items(), style_names())
+    ],
+)]
+if ITALIC:
+    stat_values.append(dict(tag="ital", name="Italic", values=[dict(value=1, name="Italic")]))
 try:
-    buildStatTable(variable, [dict(
-        tag="wght", name="Weight",
-        values=[
-            dict(value=weight, name=style, flags=0x2 if weight == 400 else 0)
-            for weight, style in WEIGHTS.items()
-        ],
-    )])
+    buildStatTable(variable, stat_values)
 except Exception as error:
     print("STAT warning", error, flush=True)
 
-output = OUT / f"{PS}-Variable.ttf"
+output = OUT / f"{PS}{'-Italic' if ITALIC else ''}-Variable.ttf"
 variable.save(output, reorderTables=True)
 variable.close()
 print("saved", output, output.stat().st_size / 1048576, "MiB", flush=True)

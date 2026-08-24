@@ -15,8 +15,9 @@ import uharfbuzz as hb
 ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE = Path(os.environ.get("HANLINK_BUILD_WORKSPACE", ROOT.parent))
 UPSTREAM = Path(os.environ.get("HANLINK_UPSTREAM_DIR", ROOT / "sources"))
-HANLINK = Path(os.environ.get("HANLINK_TEST_FONT", ROOT / "fonts/static/HanlinkSans-Regular.ttf"))
-HANKEN = UPSTREAM / "hanken/static/HankenGrotesk-Regular.ttf"
+ITALIC_TEST = os.environ.get("HANLINK_ITALIC_TEST") == "1"
+HANLINK = Path(os.environ.get("HANLINK_TEST_FONT", ROOT / ("fonts/static/HanlinkSans-Italic.ttf" if ITALIC_TEST else "fonts/static/HanlinkSans-Regular.ttf")))
+HANKEN = UPSTREAM / ("hanken/static/HankenGrotesk-Italic-Regular.ttf" if ITALIC_TEST else "hanken/static/HankenGrotesk-Regular.ttf")
 NOTO = UPSTREAM / "noto/static/NotoSansSC-Regular.ttf"
 
 if not features.check_feature("raqm"):
@@ -79,16 +80,19 @@ noto_cases = [
     ("かな、。", "ja", ()),
     ("ㄓˇ", "zh-Bopo", ()),
 ]
-for text, lang, feats in noto_cases:
-    assert visible_width(hl, text, lang, feats) > 0
-    assert shape(HANLINK, text, lang, feats) == shape(NOTO, text, lang, feats), (
-        "Noto shaping/metric mismatch", text, lang, feats
-    )
+# CJK shaping is compared only in the upright run: Noto Sans SC has no italic
+# source, and the synthetic italic CJK outlines deliberately differ.
+if not ITALIC_TEST:
+    for text, lang, feats in noto_cases:
+        assert visible_width(hl, text, lang, feats) > 0
+        assert shape(HANLINK, text, lang, feats) == shape(NOTO, text, lang, feats), (
+            "Noto shaping/metric mismatch", text, lang, feats
+        )
 
-for text, lang in (("ΑΩμ", "el"), ("ㄓˇㄨˋ", "zh-Bopo")):
-    assert shape(HANLINK, text, lang) == shape(NOTO, text, lang), ("Noto metric mismatch", text, lang)
+    for text, lang in (("ΑΩμ", "el"), ("ㄓˇㄨˋ", "zh-Bopo")):
+        assert shape(HANLINK, text, lang) == shape(NOTO, text, lang), ("Noto metric mismatch", text, lang)
 
 assert shape(HANLINK, "——", "en") == shape(HANKEN, "——", "en")
 assert shape(HANLINK, "———", "en") == shape(HANKEN, "———", "en")
 
-print("PASS: HarfBuzz shaping and RAQM rendering regression")
+print("PASS: HarfBuzz shaping and RAQM rendering regression" + (" (italic)" if ITALIC_TEST else ""))
