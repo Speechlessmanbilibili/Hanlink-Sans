@@ -1,6 +1,26 @@
 # Building Hanlink Sans
 
-Hanlink Sans is built from three OFL-licensed upstream font families. Exact source archive hashes are recorded in `SOURCES.md`.
+Hanlink Sans is built from three OFL-licensed upstream font families. Noto Sans SC and Hanken Grotesk are taken exclusively from pinned **Google Fonts repository distributions**, never author-repository, system, or mirror builds. Exact revisions and hashes are recorded in `SOURCES.md`.
+
+## 1. Fetch Google Fonts inputs
+
+```bash
+python scripts/fetch_sources.py
+```
+
+This downloads the pinned Google Fonts variable TTFs into gitignored `sources/`, verifies SHA-256, and generates all nine static source instances locally.
+
+Build CJK Punct Bridge v1.2.0 in a sibling `CJK-Punct-Bridge` directory, or set `HANLINK_BRIDGE_DIR` to that checkout.
+
+## 2. Build and verify
+
+```bash
+python scripts/build_static_reference.py
+python scripts/build_variable_reference.py
+python scripts/audit_release.py fonts/static/*.ttf fonts/variable/*.ttf
+python scripts/check_dash_matrix.py fonts/static/*.ttf fonts/variable/*.ttf
+python scripts/render_regression.py
+```
 
 ## Inputs
 
@@ -23,19 +43,22 @@ For each weight:
 5. Preserve Noto Sans SC horizontal/vertical metrics and CJK OpenType layout behavior.
 6. Normalize family/style naming to `Hanlink Sans` and set Office-compatible legacy style linking.
 
+The static Google Fonts Noto instances and CJK Punct Bridge can retain a source-specific `BASE` ItemVariationStore. `fontTools.merge` cannot combine those stores, so Hanlink removes `BASE` from merge inputs and explicitly normalizes final horizontal/vertical metrics to Noto Sans SC. `GSUB`, `GPOS`, `vhea`, and `vmtx` remain audited and preserved.
+
 ## Variable font
 
-The variable build uses the same Unicode split and family naming, preserving a `wght` axis from 100 to 900 with 400 as the default. The Regular CJK layout tables are retained as the stable default layout layer while glyph outlines and horizontal advances remain variable.
+The variable build uses all nine audited static faces as designspace masters and lets fontTools varLib generate `gvar`/metric variation data. This avoids unsafe manual GID-based tuple grafting. It preserves a `wght` axis from 100 to 900 with 400 as the default; Regular's audited CJK layout tables remain the stable layout layer.
 
 ## OpenType behavior
 
-- Default punctuation is CJK-oriented.
+- Default/no-language punctuation is CJK-oriented and remains Noto SC-based.
 - Default `U+2014` uses the Zhudou-derived CJK form.
 - Repeated `U+2014` uses `ccmp` to form continuous two-em/three-em dashes in default/CJK language systems.
-- `ENG` language-system `locl` alternates switch shared punctuation to Hanken-derived forms when language metadata is supplied.
-- The `ENG` path deliberately omits the CJK continuous-dash `ccmp`, so repeated English em dashes remain separate Hanken glyphs.
+- Every configured explicit Western language under Common, Latin, Cyrillic, or Greek runs receives `locl` alternates for all 46 punctuation code points shared by CJK Punct Bridge and Hanken Grotesk. Common-script coverage keeps English `1/2` and similar punctuation/number runs from falling through to the no-language default.
+- ASCII `U+0030`–`U+0039` are always Hanken-owned. Audits require exact source outlines and metrics and reject any default, Western, or CJK `locl` path that substitutes those ten public glyphs.
+- Explicit Western-language paths omit the CJK continuous-dash substitution, so repeated em dashes remain separate Hanken glyphs. Script defaults and explicit CJK language systems retain their Noto regional behavior.
 - `vert`, `vrt2`, `vhea`, and `vmtx` are retained for CJK vertical layout.
-- Regression scripts verify that horizontal Chinese dash runs stay horizontal, vertical runs receive vertical glyphs, and English runs do not ligate into the CJK forms.
+- Regression scripts verify the complete 46-code-point Hanken provenance, every explicit Western language system, CJK regional aliases, horizontal/vertical Chinese dashes, and the Western no-ligation policy.
 
 ## Distribution
 

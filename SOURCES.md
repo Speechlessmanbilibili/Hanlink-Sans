@@ -1,11 +1,13 @@
 # Source inputs
 
-SHA-256 hashes of the upstream archives used for this build:
+Pinned inputs used by v1.1.0. Noto Sans SC and Hanken Grotesk are sourced exclusively from the Google Fonts repository distributions below.
 
-| Archive | SHA-256 |
-| --- | --- |
-| `Hanken_Grotesk.zip` | `87e4fcee88ca5f28b7b9a85a869e582657d83abe83eaa570a9b9060d2a2c9d3b` |
-| `Noto_Sans_SC.zip` | `9597938aac67ff54701a48e654fa2236c364b853b42ee7323c2800e3bc9129fb` |
-| `Zhudou.Sans.zip` | `1a2718aa52c98d1ac7e18d60e0f1d61057b18e558e8196a3a770104855a6fc69` |
+| Input | Pinned source | SHA-256 |
+| --- | --- | --- |
+| Google Fonts Hanken Grotesk variable TTF | `google/fonts@714891563e901b1a0d8ebcaaa003b01604793888 / ofl/hankengrotesk/HankenGrotesk[wght].ttf` | `813b3f8fa0965405669a89b38e51bbefd95eef6b8e20d1cb2d8c10cce062662f` |
+| Google Fonts Noto Sans SC variable TTF | `google/fonts@2894aab31764f10f29c421bdfd2340d3b382d384 / ofl/notosanssc/NotoSansSC[wght].ttf` | `a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da` |
+| CJK Punct Bridge | `Speechlessmanbilibili/CJK-Punct-Bridge v1.2.0` | Built and audited from its pinned Google Fonts Noto/Hanken inputs and Zhudou v2.000 |
 
-The release fonts are built from the upstream font archives above. Upstream license and attribution information is summarized in `OFL.txt` and `THIRD_PARTY_NOTICES.md`.
+`scripts/fetch_sources.py` contains the immutable Google Fonts URLs, verifies both hashes, and derives the nine static source instances from the pinned variable files. Upstream license and attribution information is summarized in `OFL.txt` and `THIRD_PARTY_NOTICES.md`.
+
+The OpenType language-system policy in `scripts/language_systems.py` uses registered tags from Microsoft's OpenType 1.9 registry, last updated 2024-05-31. It is build metadata only, not a font-outline source.

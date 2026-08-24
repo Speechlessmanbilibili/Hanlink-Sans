@@ -1,10 +1,16 @@
 from pathlib import Path
 from fontTools.ttLib import TTFont
+from language_systems import (
+    CJK_LANGUAGE_TAGS,
+    HANKEN_SHARED_PUNCTUATION,
+    WESTERN_LANGUAGE_SYSTEMS,
+    WESTERN_SCRIPT_TAGS,
+)
 
 DASHES=(0x2014,0x2E3A,0x2E3B)
-WESTERN_PUNCT=(0x00B7,0x2013,0x2014,0x2018,0x2019,0x201C,0x201D,0x2026)
 HANKEN_CORE={'aalt','case','ccmp','dlig','dnom','frac','liga','numr','ordn','ss01','ss02','ss03','sups'}
 ZHS_CORE={'ccmp','dlig','fwid','hwid','pwid','ruby','vert','vrt2'}
+CJK_CORE={'ccmp','dlig','locl','vert','vrt2'}
 
 def _script(table, tag):
     return next((sr.Script for sr in table.ScriptList.ScriptRecord if sr.ScriptTag==tag),None)
@@ -43,6 +49,11 @@ def _all_langsystems(table):
         if sr.Script.DefaultLangSys is not None:yield sr.ScriptTag,'dflt',sr.Script.DefaultLangSys
         for lr in sr.Script.LangSysRecord:yield sr.ScriptTag,lr.LangSysTag.strip(),lr.LangSys
 
+def _glyph_signature(font,glyph):
+    g=font['glyf'][glyph]
+    coords,end_pts,flags=g.getCoordinates(font['glyf'])
+    return tuple(coords),tuple(end_pts),bytes(flags),font['hmtx'].metrics[glyph]
+
 def audit(path):
     f=TTFont(path); cmap=f.getBestCmap()
     assert 'vhea' in f and 'vmtx' in f
@@ -51,20 +62,46 @@ def audit(path):
     assert 'bopo' in {sr.ScriptTag for sr in f['GPOS'].table.ScriptList.ScriptRecord}
     for table_tag in ('GSUB','GPOS'):
         table=f[table_tag].table
+        feature_tags=[record.FeatureTag for record in table.FeatureList.FeatureRecord]
+        assert feature_tags==sorted(feature_tags),(path,table_tag,'FeatureList is not sorted')
         for script,lang,ls in _all_langsystems(table):
             tags=_tags(table,ls)
             assert len(tags)==len(set(tags)),(path,table_tag,script,lang,'duplicate feature tags',tags)
     g=f['GSUB'].table
+    digit_sources={cmap[cp] for cp in range(0x30,0x3A)}
+    assert len(digit_sources)==10,(path,'ASCII digits do not have ten distinct public Hanken glyphs')
+    for script,lang,ls in _all_langsystems(g):
+        locl=_single_maps(g,ls,'locl')
+        assert not digit_sources & set(locl),(path,script,lang,'locl must not replace Hanken digits')
     latn_default=set(_tags(g,_langsys(g,'latn',None)))
     latn_eng=set(_tags(g,_langsys(g,'latn','ENG ')))
     latn_zhs=set(_tags(g,_langsys(g,'latn','ZHS ')))
-    assert HANKEN_CORE|{'locl'} <= latn_default
+    assert HANKEN_CORE|ZHS_CORE|{'locl'} <= latn_default
     assert HANKEN_CORE|{'locl'} <= latn_eng
     assert HANKEN_CORE|ZHS_CORE|{'locl'} <= latn_zhs
     assert ZHS_CORE|{'locl'} <= set(_tags(g,_langsys(g,'hani','ZHS ')))
-    latn_locl=_single_maps(g,_langsys(g,'latn',None),'locl')
-    for cp in WESTERN_PUNCT:
-        assert cmap[cp] in latn_locl and latn_locl[cmap[cp]]!=cmap[cp],(path,hex(cp),'missing Western locl')
+    assert len({cmap[cp] for cp in HANKEN_SHARED_PUNCTUATION})==len(HANKEN_SHARED_PUNCTUATION)
+    western_targets=None
+    for script in WESTERN_SCRIPT_TAGS:
+        default_locl=_single_maps(g,_langsys(g,script,None),'locl')
+        for lang in WESTERN_LANGUAGE_SYSTEMS[script]:
+            ls=_langsys(g,script,lang)
+            assert ls is not None,(path,script,lang,'missing Western LangSys')
+            locl=_single_maps(g,ls,'locl')
+            targets=[]
+            for cp in HANKEN_SHARED_PUNCTUATION:
+                source=cmap[cp];target=locl.get(source)
+                assert target and target!=source,(path,script,lang,hex(cp),'missing Hanken locl')
+                assert default_locl.get(source,source)!=target,(path,script,lang,hex(cp),'default leaked Hanken')
+                targets.append(target)
+            if western_targets is None:western_targets=tuple(targets)
+            else:assert tuple(targets)==western_targets,(path,script,lang,'inconsistent Hanken targets')
+    for lang in CJK_LANGUAGE_TAGS:
+        ls=_langsys(g,'DFLT',lang)
+        assert ls is not None,(path,lang,'missing CJK LangSys')
+        assert CJK_CORE <= set(_tags(g,ls)),(path,lang,_tags(g,ls))
+        locl=_single_maps(g,ls,'locl')
+        assert locl.get(cmap[0x2014],cmap[0x2014])!=western_targets[HANKEN_SHARED_PUNCTUATION.index(0x2014)],(path,lang,'CJK dash leaked Hanken')
     for script,cp in (('grek',0x0301),('grek',0x0394),('cyrl',0x0301),('bopo',0x02C7),('bopo',0x02D9)):
         if cp not in cmap:continue
         mp=_single_maps(g,_langsys(g,script,None),'ccmp')
@@ -78,7 +115,25 @@ def audit(path):
         assert len(f['fvar'].instances)==9
     f.close()
 
+def audit_hanken_provenance(path,source_path):
+    f=TTFont(path);h=TTFont(source_path)
+    cmap=f.getBestCmap();hcmap=h.getBestCmap()
+    bridge_shared=set(HANKEN_SHARED_PUNCTUATION)
+    for cp in range(0x30,0x3A):
+        assert _glyph_signature(f,cmap[cp])==_glyph_signature(h,hcmap[cp]),(hex(cp),'digit is not exact Hanken outline/metrics')
+    for cp in sorted(set(hcmap)-bridge_shared):
+        assert _glyph_signature(f,cmap[cp])==_glyph_signature(h,hcmap[cp]),hex(cp)
+    locl=_single_maps(f['GSUB'].table,_langsys(f['GSUB'].table,'latn','ENG '),'locl')
+    for cp in HANKEN_SHARED_PUNCTUATION:
+        assert _glyph_signature(f,locl[cmap[cp]])==_glyph_signature(h,hcmap[cp]),hex(cp)
+    f.close();h.close()
+
 if __name__=='__main__':
     import sys
+    root=Path(__file__).resolve().parents[1]
+    hanken=root/'sources/hanken/static/HankenGrotesk-Regular.ttf'
     for arg in sys.argv[1:]:
-        audit(Path(arg));print('OK',arg)
+        path=Path(arg);audit(path)
+        if hanken.exists() and path.name in {'HanlinkSans-Regular.ttf','HanlinkSans-Variable.ttf'}:
+            audit_hanken_provenance(path,hanken)
+        print('OK',arg)

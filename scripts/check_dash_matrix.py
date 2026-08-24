@@ -7,6 +7,7 @@ ccmp/locl/vert/vrt2 in these fonts, so it can run without HarfBuzz.
 from pathlib import Path
 from fontTools.ttLib import TTFont
 import sys
+from language_systems import CJK_LANGUAGE_TAGS, WESTERN_LANGUAGE_SYSTEMS, WESTERN_SCRIPT_TAGS
 
 
 def _langsys(gsub, script_tag, lang_tag):
@@ -78,14 +79,19 @@ def check_font(path):
     font = TTFont(path)
     assert "GSUB" in font and "vhea" in font and "vmtx" in font, f"missing layout/vertical tables: {path}"
     for count, text in enumerate(("—", "——", "———"), 1):
-        for script, lang in (("hani", "ZHS "), ("DFLT", None)):
+        for script, lang in (("hani", "ZHS "), ("DFLT", None), ("latn", None)):
             horizontal = _shape(font, text, script, lang, False)
             vertical = _shape(font, text, script, lang, True)
             assert len(horizontal) == 1 and _orientation(font, horizontal[0]) == "horizontal", (path, text, "horizontal", horizontal)
             assert len(vertical) == 1 and _orientation(font, vertical[0]) == "vertical", (path, text, "vertical", vertical)
-        english = _shape(font, text, "latn", "ENG ", False)
-        assert len(english) == count, (path, text, "ENG unexpectedly ligated", english)
-        assert all(_orientation(font, g) == "horizontal" for g in english), (path, text, "ENG orientation", english)
+        for lang in CJK_LANGUAGE_TAGS:
+            cjk = _shape(font, text, "DFLT", lang, False)
+            assert len(cjk) == 1, (path, text, lang, "CJK alias not ligated", cjk)
+        for script in WESTERN_SCRIPT_TAGS:
+            for lang in WESTERN_LANGUAGE_SYSTEMS[script]:
+                western = _shape(font, text, script, lang, False)
+                assert len(western) == count, (path, text, script, lang, "unexpectedly ligated", western)
+                assert all(_orientation(font, g) == "horizontal" for g in western), (path, text, script, lang, "orientation", western)
     font.close()
 
 

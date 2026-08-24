@@ -1,2 +1,3 @@
 fonttools[brotli]>=4.60
 Pillow>=10
+uharfbuzz>=0.50

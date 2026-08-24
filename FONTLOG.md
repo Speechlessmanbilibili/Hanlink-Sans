@@ -1,5 +1,27 @@
 # FONTLOG
 
+## 1.100 — 2026-08-24
+
+- Expanded Western punctuation from eight ambiguous marks to all 46 code points shared by CJK Punct Bridge and the pinned Google Fonts Hanken Grotesk source.
+- Made Hanken ownership of ASCII digits invariant across every default, Western, and CJK language system, with direct outline/metric, `locl`, and HarfBuzz regressions.
+- Added explicit Hanken punctuation `locl` paths for the configured registered Western languages under Common, Latin, Cyrillic, and Greek runs while restoring Noto SC as every no-language punctuation default.
+- Preserved corresponding Noto punctuation for Simplified/phonetic Chinese, Traditional Chinese including Hong Kong and Macao, Japanese, Korean, and old Hangul.
+- Split the Noto-shared `U+00B7`/`U+2022` bridge inputs so their distinct Hanken designs remain individually addressable.
+- Replaced the compressed layout-compatibility payload with readable source code and made build-cache reuse opt-in to prevent stale release binaries.
+- Removed unmergeable source-specific `BASE` variation stores at the documented merge boundary while retaining audited Noto metrics, GSUB/GPOS, and vertical tables.
+- Restored the byte-identical Google Fonts Hanken/Noto TrueType `prep` program after merge rather than relying on merger table retention.
+- Kept Bridge-to-Hanken repair scoped to direct substitutions and language-specific contexts; HarfBuzz's `frac` normalization remains responsible for converting ASCII slash to the Hanken fraction slash.
+- Fixed layout-reference scanning to traverse dictionary-backed single substitutions, allowing Hanken `frac` to reconnect the Bridge-owned ASCII slash to the original fraction glyph.
+- Inserted direct Bridge-input repair lookups ahead of the global source lookup list, matching OpenType's global lookup ordering so contextual consumers see repaired glyphs in time.
+- Extended direct repairs across every reachable Bridge/Noto `locl` intermediate, preventing an earlier punctuation localization from bypassing Hanken features such as `frac`.
+- Ordered Hanken feature repair after final Western `locl` installation so the repair graph includes the Hanlink-specific hidden-Hanken target as well as upstream bridge intermediates.
+- Sorted merged GSUB/GPOS FeatureRecords and remapped every LangSys/FeatureVariations index, fixing shapers that require the OpenType-mandated tag order to find the intended private `locl` feature.
+- Replaced manual GID-based `gvar` grafting with a nine-master varLib designspace built from the audited static family, eliminating point-topology corruption in the variable font.
+- Added direct HarfBuzz shaping comparisons for source advances, clusters, and offsets; RAQM remains the rendering smoke test and is no longer used as a source-metric oracle.
+- Added a reproducible source fetcher that downloads Noto Sans SC and Hanken Grotesk only from pinned Google Fonts commits, verifies hashes, and generates the static source instances.
+- Expanded structural audits and dash matrices across the full language/punctuation policy.
+- Changed RAQM regressions to require successful rendering and matching shaped advances, while the structural audit now compares every Hanken-owned public glyph and all 46 localized punctuation targets directly against the pinned Google Fonts outlines and metrics. This avoids treating deliberate global Noto raster metrics as Hanken outline regressions.
+
 ## 1.001 — 2026-08-23
 
 - Restored Hanken Grotesk Latin OpenType behavior across mixed and Western language systems, including standard/discretionary ligatures, kerning, fractions, ordinals, superscripts/subscripts, stylistic sets, and language-specific `locl`.

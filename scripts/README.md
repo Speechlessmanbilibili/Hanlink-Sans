@@ -1,12 +1,17 @@
 # Reference build scripts
 
-`build_static_reference.py` and `build_variable_reference.py` are the audited scripts used for release 1.000. They use repository-relative output paths and accept these optional environment variables for source/workspace locations:
+`fetch_sources.py` downloads the pinned Google Fonts Noto Sans SC and Hanken Grotesk variable TTFs, verifies their hashes, and creates the nine static source instances.
+
+`build_static_reference.py` and `build_variable_reference.py` are the audited release build scripts. Their default source cache is `sources/`, their default bridge checkout is the sibling `CJK-Punct-Bridge` repository, and they accept these optional environment variables:
 
 - `HANLINK_BUILD_WORKSPACE`
 - `HANLINK_UPSTREAM_DIR`
 - `HANLINK_BRIDGE_DIR`
 - `HANLINK_STATIC_BUILD_DIR` / `HANLINK_VF_BUILD_DIR`
+- `HANLINK_TEST_FONT` (selects a static or variable release file for the HarfBuzz/RAQM regression)
 
 The upstream files and archive hashes used for the published binaries are recorded in `SOURCES.md`.
 
-`audit_release.py` and `check_dash_matrix.py` perform structural regression checks for language-sensitive `ccmp` behavior, vertical metrics, dash orientation, and the variable weight axis.
+`HANLINK_REUSE_STATIC=1` and `HANLINK_REUSE_VF_INPUTS=1` opt into build-cache reuse. Normal release builds deliberately rebuild to prevent stale binaries.
+
+`language_systems.py` pins the OpenType language registry and source-policy constants. `audit_release.py` and `check_dash_matrix.py` check all explicit Western language systems, all 46 Hanken punctuation mappings, invariant Hanken digits, CJK regional aliases, language-sensitive `ccmp`, vertical metrics, dash orientation, and the variable weight axis.

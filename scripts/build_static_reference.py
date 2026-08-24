@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 from copy import deepcopy
-import gc, shutil, zipfile
+import gc
 from fontTools.ttLib import TTFont,newTable
 from fontTools.subset import Subsetter,Options
 from fontTools.merge import Merger,computeMegaGlyphOrder
@@ -10,11 +10,11 @@ from layout_compat import fix_hanlink_language_systems
 
 REPO=Path(__file__).resolve().parents[1]
 WORKSPACE=Path(os.environ.get('HANLINK_BUILD_WORKSPACE', REPO.parent))
-SRC=Path(os.environ.get('HANLINK_UPSTREAM_DIR', WORKSPACE/'wordfont_build'))
-BRIDGE=Path(os.environ.get('HANLINK_BRIDGE_DIR', WORKSPACE/'CJKPunctBridge-v2'))
-OUT=REPO; STATIC_OUT=OUT/'fonts/static'; WORK=Path(os.environ.get('HANLINK_STATIC_BUILD_DIR', WORKSPACE/'HanlinkSans-build/static'))
+SRC=Path(os.environ.get('HANLINK_UPSTREAM_DIR', REPO/'sources'))
+BRIDGE=Path(os.environ.get('HANLINK_BRIDGE_DIR', REPO.parent/'CJK-Punct-Bridge'))
+OUT=REPO; STATIC_OUT=OUT/'fonts/static'; WORK=Path(os.environ.get('HANLINK_STATIC_BUILD_DIR', REPO/'build/static'))
 for p in [OUT,STATIC_OUT,WORK]: p.mkdir(parents=True,exist_ok=True)
-FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.001'
+FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.100'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
 HFILES={w:SRC/'hanken/static'/f'HankenGrotesk-{s}.ttf' for w,s in WEIGHTS.items()}
 NFILES={w:SRC/'noto/static'/f'NotoSansSC-{s}.ttf' for w,s in WEIGHTS.items()}
@@ -54,6 +54,12 @@ def subset_font(f,cps):
     o=Options(); o.layout_features=['*']; o.name_IDs=['*']; o.name_legacy=True; o.name_languages=['*']; o.notdef_glyph=True; o.notdef_outline=True; o.recommended_glyphs=True; o.glyph_names=True; o.hinting=True
     s=Subsetter(options=o); s.populate(unicodes=cps); s.subset(f); return f
 
+def drop_unmergeable_base_varstore(f):
+    # Google Fonts Noto CJK static instances retain a BASE ItemVariationStore.
+    # fontTools.merge cannot combine source-specific BASE variation stores, and
+    # Hanlink normalizes to Noto metrics instead of publishing that source table.
+    if 'BASE' in f: del f['BASE']
+
 def add_vertical_to_hanken(h,noto):
     h['vhea']=deepcopy(noto['vhea']); vm=newTable('vmtx'); metrics={}
     nc=noto.getBestCmap(); nvm=noto['vmtx'].metrics; hc=h.getBestCmap(); reverse={}
@@ -80,17 +86,19 @@ def use_noto_metrics(f,n):
 
 def build(w,style):
     op=STATIC_OUT/f'{PS}-{style}.ttf'
-    if op.exists() and op.stat().st_size>5_000_000: print('skip',style,flush=True); return op
+    if os.environ.get('HANLINK_REUSE_STATIC')=='1' and op.exists() and op.stat().st_size>5_000_000:
+        print('reuse',style,flush=True); return op
     print('build',w,style,'subset',flush=True)
-    hp=WORK/f'h-{w}.ttf'; np=WORK/f'n-{w}.ttf'
+    bp=WORK/f'b-{w}.ttf'; hp=WORK/f'h-{w}.ttf'; np=WORK/f'n-{w}.ttf'
+    bf=TTFont(BFILES[w]); drop_unmergeable_base_varstore(bf); bf.save(bp); bf.close()
     hf=subset_font(TTFont(HFILES[w]),HC); hanken_pre_order=list(hf.getGlyphOrder()); remove_cmap_codepoints(hf,BC); nf_full=TTFont(NFILES[w]); add_vertical_to_hanken(hf,nf_full); hf.save(hp); hf.close(); nf_full.close()
     hsaved=TTFont(hp,lazy=True); hanken_saved_order=list(hsaved.getGlyphOrder()); hsaved.close()
     hanken_orig_to_saved=dict(zip(hanken_pre_order,hanken_saved_order))
-    nf=subset_font(TTFont(NFILES[w]),NC); noto_pre_order=list(nf.getGlyphOrder()); remove_cmap_codepoints(nf,BC|HALL); nf.save(np); nf.close()
+    nf=subset_font(TTFont(NFILES[w]),NC); noto_pre_order=list(nf.getGlyphOrder()); remove_cmap_codepoints(nf,BC|HALL); drop_unmergeable_base_varstore(nf); nf.save(np); nf.close()
     nsaved=TTFont(np,lazy=True); noto_saved_order=list(nsaved.getGlyphOrder()); nsaved.close()
     noto_orig_to_saved=dict(zip(noto_pre_order,noto_saved_order))
     print('merge',style,flush=True)
-    source_paths=[BFILES[w],hp,np]; orig=[]; ren=[]
+    source_paths=[bp,hp,np]; orig=[]; ren=[]
     for sp in source_paths:
         sf=TTFont(sp,lazy=True); order=list(sf.getGlyphOrder()); sf.close(); orig.append(order); ren.append(list(order))
     dummy=Merger(); computeMegaGlyphOrder(dummy,ren); maps=[dict(zip(o,r)) for o,r in zip(orig,ren)]
@@ -105,10 +113,12 @@ def build(w,style):
     }
     m=Merger().merge([str(x) for x in source_paths])
     no=TTFont(NFILES[w]); hs=TTFont(HFILES[w]); fix_hanlink_language_systems(m,hanken_hidden,hs,no,noto_glyph_map,HALL-BC,BC)
+    if 'prep' in hs:
+        m['prep']=deepcopy(hs['prep'])
     use_noto_metrics(m,no); set_names(m,w,style)
     try: buildStatTable(m,[dict(tag='wght',name='Weight',values=[dict(value=w,name=style,flags=0x2 if w==400 else 0)])])
     except Exception as e: print('STAT warning',style,e,flush=True)
-    m.save(op,reorderTables=True); m.close(); no.close(); hs.close(); hp.unlink(missing_ok=True); np.unlink(missing_ok=True); gc.collect(); print('done',style,op.stat().st_size/1048576,'MiB',flush=True); return op
+    m.save(op,reorderTables=True); m.close(); no.close(); hs.close(); bp.unlink(missing_ok=True); hp.unlink(missing_ok=True); np.unlink(missing_ok=True); gc.collect(); print('done',style,op.stat().st_size/1048576,'MiB',flush=True); return op
 
 only=os.environ.get('HANLINK_ONLY_WEIGHT')
 selected=WEIGHTS if not only else {int(only):WEIGHTS[int(only)]}
