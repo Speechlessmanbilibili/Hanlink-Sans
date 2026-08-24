@@ -21,6 +21,7 @@
 - Added a reproducible source fetcher that downloads Noto Sans SC and Hanken Grotesk only from pinned Google Fonts commits, verifies hashes, and generates the static source instances.
 - Expanded structural audits and dash matrices across the full language/punctuation policy.
 - Changed RAQM regressions to require successful rendering and matching shaped advances, while the structural audit now compares every Hanken-owned public glyph and all 46 localized punctuation targets directly against the pinned Google Fonts outlines and metrics. This avoids treating deliberate global Noto raster metrics as Hanken outline regressions.
+- Replaced inherited upstream identity fields with explicit project authorship, modification copyright, source attribution, repository links, OFL details, and a project-aligned internal revision in every static and variable font.
 
 ## 1.001 — 2026-08-23
 

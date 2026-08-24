@@ -12,6 +12,7 @@ from fontTools.otlLib.builder import buildStatTable
 from fontTools.ttLib import TTFont
 from fontTools.varLib import build as varlib_build
 from fontTools.varLib.instancer import instantiateVariableFont
+from font_metadata import apply_binary_metadata, project_names
 
 REPO = Path(__file__).resolve().parents[1]
 STATIC = REPO / "fonts/static"
@@ -22,21 +23,11 @@ WORK.mkdir(parents=True, exist_ok=True)
 
 FAMILY = "Hanlink Sans"
 PS = "HanlinkSans"
-VERSION = "1.100"
 WEIGHTS = {
     100: "Thin", 200: "ExtraLight", 300: "Light", 400: "Regular",
     500: "Medium", 600: "SemiBold", 700: "Bold", 800: "ExtraBold",
     900: "Black",
 }
-COPYRIGHT = (
-    "Portions Copyright 2021 The Hanken Grotesk Project Authors. "
-    "Portions Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'. "
-    "Portions Copyright 2022 Buernia, with Reserved Font Names 'Zhudou' and '煮豆'; "
-    "portions Copyright 2015 Google Inc. Hanlink Sans is a modified/combined font "
-    "distributed under SIL Open Font License 1.1."
-)
-
-
 def setname(table, name_id, value):
     table.names = [record for record in table.names if record.nameID != name_id]
     table.setName(value, name_id, 3, 1, 0x409)
@@ -50,17 +41,14 @@ def setname(table, name_id, value):
 def set_names(font):
     names = font["name"]
     values = {
-        0: COPYRIGHT, 1: FAMILY, 2: "Regular",
-        3: f"{VERSION};HanlinkBuild;{PS}-VF", 4: FAMILY,
-        5: f"Version {VERSION}", 6: PS,
-        13: "SIL Open Font License, Version 1.1",
-        14: "https://openfontlicense.org", 16: FAMILY, 17: "Regular", 25: PS,
+        **project_names(f"{PS}-VF"), 1: FAMILY, 2: "Regular", 4: FAMILY,
+        6: PS, 16: FAMILY, 17: "Regular", 25: PS,
     }
     for name_id, value in values.items():
         setname(names, name_id, value)
+    apply_binary_metadata(font)
     os2 = font["OS/2"]
     os2.usWeightClass = 400
-    os2.achVendID = "NONE"
     for bit in (0, 5, 6, 9):
         os2.fsSelection &= ~(1 << bit)
     os2.fsSelection |= 1 << 6

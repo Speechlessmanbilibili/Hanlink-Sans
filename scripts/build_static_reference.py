@@ -7,6 +7,7 @@ from fontTools.subset import Subsetter,Options
 from fontTools.merge import Merger,computeMegaGlyphOrder
 from fontTools.otlLib.builder import buildStatTable
 from layout_compat import fix_hanlink_language_systems
+from font_metadata import apply_binary_metadata, project_names
 
 REPO=Path(__file__).resolve().parents[1]
 WORKSPACE=Path(os.environ.get('HANLINK_BUILD_WORKSPACE', REPO.parent))
@@ -14,15 +15,11 @@ SRC=Path(os.environ.get('HANLINK_UPSTREAM_DIR', REPO/'sources'))
 BRIDGE=Path(os.environ.get('HANLINK_BRIDGE_DIR', REPO.parent/'CJK-Punct-Bridge'))
 OUT=REPO; STATIC_OUT=OUT/'fonts/static'; WORK=Path(os.environ.get('HANLINK_STATIC_BUILD_DIR', REPO/'build/static'))
 for p in [OUT,STATIC_OUT,WORK]: p.mkdir(parents=True,exist_ok=True)
-FAMILY='Hanlink Sans'; PS='HanlinkSans'; VERSION='1.100'
+FAMILY='Hanlink Sans'; PS='HanlinkSans'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
 HFILES={w:SRC/'hanken/static'/f'HankenGrotesk-{s}.ttf' for w,s in WEIGHTS.items()}
 NFILES={w:SRC/'noto/static'/f'NotoSansSC-{s}.ttf' for w,s in WEIGHTS.items()}
 BFILES={w:BRIDGE/'fonts/static'/f'CJKPunctBridge-{s}.ttf' for w,s in WEIGHTS.items()}
-COPYRIGHT=("Portions Copyright 2021 The Hanken Grotesk Project Authors. "
-           "Portions Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'. "
-           "Portions Copyright 2022 Buernia, with Reserved Font Names 'Zhudou' and '煮豆'; portions Copyright 2015 Google Inc. "
-           "Hanlink Sans is a modified/combined font distributed under SIL Open Font License 1.1.")
 # Stable unicode split from Regular
 b=TTFont(BFILES[400]); h=TTFont(HFILES[400]); n=TTFont(NFILES[400])
 BC=set(b.getBestCmap()); HALL=set(h.getBestCmap()); NALL=set(n.getBestCmap()); HC=HALL; NC=NALL
@@ -35,9 +32,11 @@ def setname(nt,nid,val):
 
 def set_names(f,w,style):
     nt=f['name']; legacy_family=FAMILY if w in (400,700) else f'{FAMILY} {style}'; legacy_sub='Bold' if w==700 else 'Regular'; full=FAMILY if w==400 else f'{FAMILY} {style}'
-    vals={0:COPYRIGHT,1:legacy_family,2:legacy_sub,3:f'{VERSION};HanlinkBuild;{PS}-{style}',4:full,5:f'Version {VERSION}',6:f'{PS}-{style}',13:'SIL Open Font License, Version 1.1',14:'https://openfontlicense.org',16:FAMILY,17:style,25:PS}
+    vals={**project_names(f'{PS}-{style}'),1:legacy_family,2:legacy_sub,4:full,
+          6:f'{PS}-{style}',16:FAMILY,17:style,25:PS}
     for k,v in vals.items(): setname(nt,k,v)
-    o=f['OS/2']; o.usWeightClass=w; o.achVendID='NONE'; fs=o.fsSelection
+    apply_binary_metadata(f)
+    o=f['OS/2']; o.usWeightClass=w; fs=o.fsSelection
     for bit in (0,5,6,9): fs &= ~(1<<bit)
     if w==400: fs|=1<<6
     if w==700: fs|=1<<5

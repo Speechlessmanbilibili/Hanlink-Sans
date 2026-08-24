@@ -6,6 +6,7 @@ from language_systems import (
     WESTERN_LANGUAGE_SYSTEMS,
     WESTERN_SCRIPT_TAGS,
 )
+from font_metadata import audit_metadata
 
 DASHES=(0x2014,0x2E3A,0x2E3B)
 HANKEN_CORE={'aalt','case','ccmp','dlig','dnom','frac','liga','numr','ordn','ss01','ss02','ss03','sups'}
@@ -56,6 +57,8 @@ def _glyph_signature(font,glyph):
 
 def audit(path):
     f=TTFont(path); cmap=f.getBestCmap()
+    unique_id='HanlinkSans-VF' if 'fvar' in f else path.stem
+    audit_metadata(f,unique_id)
     assert 'vhea' in f and 'vmtx' in f
     assert 'prep' in f, (path, 'missing shared upstream TrueType prep program')
     assert set(('DFLT','latn','hani','kana','grek','cyrl','bopo')) <= {sr.ScriptTag for sr in f['GSUB'].table.ScriptList.ScriptRecord}
