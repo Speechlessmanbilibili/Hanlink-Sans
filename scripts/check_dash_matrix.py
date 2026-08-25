@@ -26,8 +26,8 @@ def _apply_lookup(glyphs, lookup):
     for st in lookup.SubTable:
         lookup_type = lookup.LookupType
         if lookup_type == 7:
-            st = st.ExtSubTable
             lookup_type = st.ExtensionLookupType
+            st = st.ExtSubTable
         if lookup_type == 1 and hasattr(st, "mapping"):
             out = [st.mapping.get(g, g) for g in out]
         elif lookup_type == 4:

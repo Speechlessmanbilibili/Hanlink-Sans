@@ -30,6 +30,27 @@ checkout must have been built with `CJK_PUNCT_ITALIC=1` first so its italic
 static faces exist. Regression scripts accept `HANLINK_ITALIC_TEST=1` to
 compare the italic Latin against the Hanken Grotesk Italic source.
 
+## Regional glyph variants
+
+Since v1.3.0 the build extracts regional glyph variants from the pinned
+four-in-one Noto CJK TTF-VF (`sources/noto-cjk`, see `SOURCES.md`) by default:
+
+- For each of ZHT / JAN / KOR / ZHH, the `locl` mappings of the Noto CJK
+  `hani` language systems are read and the variant glyphs are copied into
+  Hanlink with `sources/noto-cjk/static` as the variant source.
+- Identical regional outlines are deduplicated across languages (e.g.
+  Japan/Korea or Hong Kong/Taiwan same-shape variants share one glyph).
+- Each language gets its **own** `locl` feature carrying the existing bridge
+  punctuation lookups plus the new variant lookup — a second `locl` feature
+  in the same LangSys would be ignored by HarfBuzz, and merge-shared lookups
+  would overwrite each other.
+- Italic builds apply the synthetic shear to the copied variant glyphs too.
+
+Set `HANLINK_CJK_VARIANTS_DIR` (default `sources/noto-cjk/static`) to change
+the variant source, `HANLINK_CJK_VARIANTS_LANGS` (default
+`ZHT ,JAN ,KOR ,ZHH `) to change the regions, or point
+`HANLINK_CJK_VARIANTS_DIR` at a non-existent directory to disable variants.
+
 ## Inputs
 
 - Hanken Grotesk: Latin, ordinary Western digits and most Western symbols.

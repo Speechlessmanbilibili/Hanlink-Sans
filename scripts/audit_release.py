@@ -41,7 +41,7 @@ def _single_maps(table,ls,tag):
             lk=table.LookupList.Lookup[li]
             for st in lk.SubTable:
                 typ=lk.LookupType
-                if typ==7:st=st.ExtSubTable;typ=st.ExtensionLookupType
+                if typ==7:typ=st.ExtensionLookupType;st=st.ExtSubTable
                 if typ==1 and hasattr(st,'mapping'):out.update(st.mapping)
     return out
 
@@ -125,6 +125,25 @@ def audit(path):
         assert f['post'].italicAngle<0,(path,'italicAngle not negative')
         sub=f['name'].getDebugName(2)
         assert sub and sub.endswith('Italic'),(path,'subfamily',sub)
+    # CJK 区域字形变体（v1.3.0）：四语言 locl 映射完整 + 字形上限
+    assert len(f.getGlyphOrder())<=65535,(path,'glyph count exceeds TrueType limit')
+    if 'GSUB' in f and not italic:
+        gsub=f['GSUB'].table
+        for sr in gsub.ScriptList.ScriptRecord:
+            if sr.ScriptTag!='hani':continue
+            for lr in sr.Script.LangSysRecord:
+                if lr.LangSysTag not in ('ZHT ','JAN ','KOR ','ZHH '):continue
+                locl_n=0
+                for fi in lr.LangSys.FeatureIndex:
+                    fr=gsub.FeatureList.FeatureRecord[fi]
+                    if fr.FeatureTag!='locl':continue
+                    for li in fr.Feature.LookupListIndex:
+                        lk=gsub.LookupList.Lookup[li]
+                        for st in lk.SubTable:
+                            typ=lk.LookupType
+                            if typ==7:typ=st.ExtensionLookupType;st=st.ExtSubTable
+                            if typ==1 and hasattr(st,'mapping'):locl_n+=len(st.mapping)
+                assert locl_n>5000,(path,'hani',lr.LangSysTag,'区域 locl 映射缺失',locl_n)
     f.close()
 
 def audit_hanken_provenance(path,source_path):

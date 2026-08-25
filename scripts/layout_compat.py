@@ -308,8 +308,8 @@ def _iter_lookup_subtables(table, feature_indices):
             for st in lookup.SubTable:
                 typ = lookup.LookupType
                 if typ == 7:
-                    st = st.ExtSubTable
                     typ = st.ExtensionLookupType
+                    st = st.ExtSubTable
                 yield typ, st
 
 
@@ -963,8 +963,8 @@ def _add_direct_bridge_mappings_to_hanken_feature(font, feature_idx, cps, hanken
             for subtable in lookup.SubTable:
                 typ = lookup.LookupType
                 if typ == 7:
-                    subtable = subtable.ExtSubTable
                     typ = subtable.ExtensionLookupType
+                    subtable = subtable.ExtSubTable
                 if typ == 1 and hasattr(subtable, "mapping"):
                     locl_maps.append(subtable.mapping)
     # Existing Hanken feature lookups already know hidden-Hanken -> Hanken-alt.
@@ -981,8 +981,8 @@ def _add_direct_bridge_mappings_to_hanken_feature(font, feature_idx, cps, hanken
             for st in lookup.SubTable:
                 typ = lookup.LookupType
                 if typ == 7:
-                    st = st.ExtSubTable
                     typ = st.ExtensionLookupType
+                    st = st.ExtSubTable
                 if typ == 1 and hasattr(st, "mapping") and hidden in st.mapping:
                     output = st.mapping[hidden]
                     break

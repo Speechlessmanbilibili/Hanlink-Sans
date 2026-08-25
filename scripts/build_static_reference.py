@@ -18,6 +18,12 @@ OUT=REPO; STATIC_OUT=OUT/'fonts/static'; WORK=Path(os.environ.get('HANLINK_STATI
 for p in [OUT,STATIC_OUT,WORK]: p.mkdir(parents=True,exist_ok=True)
 FAMILY='Hanlink Sans'; PS='HanlinkSans'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
+# CJK 区域字形变体：从四地合一 Noto CJK（sources/noto-cjk）提取 locl 变体，
+# 挂到对应语言系统（ZHT/JAN/KOR/ZHH）。用环境变量可关闭或自定义。
+VARIANTS_DIR=os.environ.get('HANLINK_CJK_VARIANTS_DIR', SRC/'noto-cjk'/'static')
+VARIANTS_LANGS=os.environ.get('HANLINK_CJK_VARIANTS_LANGS','ZHT ,JAN ,KOR ,ZHH ').split(',')
+if not VARIANTS_DIR or not os.path.isdir(VARIANTS_DIR):
+    VARIANTS_DIR=None
 # Synthetic italic: Hanken supplies true italic Latin designs; CJK (Noto SC and
 # the punctuation bridge) has no true italic, so it gets a uniform 10-degree
 # y-shear, the usual synthetic slant.
@@ -31,6 +37,147 @@ BFILES={w:BRIDGE/'fonts/static'/(f'CJKPunctBridge-Italic.ttf' if (ITALIC and w==
 b=TTFont(BFILES[400]); h=TTFont(HFILES[400]); n=TTFont(NFILES[400])
 BC=set(b.getBestCmap()); HALL=set(h.getBestCmap()); NALL=set(n.getBestCmap()); HC=HALL; NC=NALL
 b.close(); h.close(); n.close(); print('split',len(BC),len(HC),len(NC),flush=True)
+
+def copy_glyph(dst, src, sn, dn):
+    dst['glyf'][dn] = deepcopy(src['glyf'][sn])
+    dst['hmtx'].metrics[dn] = src['hmtx'].metrics[sn]
+    if 'vmtx' in dst:
+        if 'vmtx' in src and sn in src['vmtx'].metrics:
+            dst['vmtx'].metrics[dn] = src['vmtx'].metrics[sn]
+        else:
+            dst['vmtx'].metrics[dn] = (1000, 0)
+
+
+def install_cjk_variants(font, variants_path, lang_tags):
+    """实验：从四地合一 Noto CJK 提取 locl 变体字形挂到目标语言系统。
+
+    Noto CJK 的 hani 语言系统（ZHT/JAN/KOR…）自带完整 locl 映射（码点 →
+    区域变体字形）。这里按码点对齐：把变体字形 copy 进 Hanlink（新名
+    ``<源字形>.cjk<语言>``），并在对应语言系统挂一个 locl 单替换。
+    """
+    from fontTools.otlLib.builder import buildLookup, buildSingleSubstSubtable
+    from fontTools.ttLib.tables import otTables
+    vf = TTFont(variants_path)
+    vcmap = vf.getBestCmap()
+    vrev = {g: cp for cp, g in vcmap.items()}
+    vgsub = vf['GSUB'].table
+    font_cmap = font.getBestCmap()
+    font_order = list(font.getGlyphOrder())
+
+    def locl_maps(lang):
+        out = {}
+        for sr in vgsub.ScriptList.ScriptRecord:
+            if sr.ScriptTag != 'hani':
+                continue
+            for lr in sr.Script.LangSysRecord:
+                if lr.LangSysTag != lang:
+                    continue
+                for fi in lr.LangSys.FeatureIndex:
+                    fr = vgsub.FeatureList.FeatureRecord[fi]
+                    if fr.FeatureTag != 'locl':
+                        continue
+                    for li in fr.Feature.LookupListIndex:
+                        lk = vgsub.LookupList.Lookup[li]
+                        for st in lk.SubTable:
+                            typ = lk.LookupType
+                            if typ == 7:
+                                typ = st.ExtensionLookupType
+                                st = st.ExtSubTable
+                            if typ == 1 and hasattr(st, 'mapping'):
+                                out.update(st.mapping)
+        return out
+
+    total = 0
+    installed_targets = {}  # cp -> (Noto 目标字形, 已安装的 new_name)，跨语言差集
+    for lang in lang_tags:
+        mapping = locl_maps(lang)
+        new_mapping = {}
+        for src_glyph, dst_glyph in mapping.items():
+            cp = vrev.get(src_glyph)
+            if cp is None or cp not in font_cmap:
+                continue
+            target = font_cmap[cp]
+            prev = installed_targets.get(cp)
+            if prev is not None and prev[0] == dst_glyph:
+                # 差集：该码点已安装同一目标字形（如 ZHH 与 ZHT 同形、
+                # 日韩同形）。省字形，但映射必须照加，指向已装的那个。
+                new_mapping[target] = prev[1]
+                continue
+            new_name = f'{target}.cjk{lang.strip()}'
+            if new_name in font_order or dst_glyph not in vf['glyf']:
+                continue
+            copy_glyph(font, vf, dst_glyph, new_name)
+            if ITALIC:
+                # 变体字形在 merge 后 copy，绕过了源剪切；斜体构建时补斜切
+                g = font['glyf'][new_name]
+                if g.numberOfContours > 0:
+                    coords = g.coordinates
+                    for i, (x, y) in enumerate(coords):
+                        coords[i] = (x + y * SLANT, y)
+                g.recalcBounds(font['glyf'])
+                adv = font['hmtx'].metrics[new_name][0]
+                font['hmtx'].metrics[new_name] = (adv, getattr(g, 'xMin', 0))
+            font_order.append(new_name)
+            installed_targets[cp] = (dst_glyph, new_name)
+            new_mapping[target] = new_name
+            total += 1
+        if not new_mapping:
+            print('no variants for', lang, flush=True)
+            continue
+        # 每个语言新建独立的 locl feature：标点 lookups + 变体 lookup，
+        # 替换该 LangSys 的旧 locl 引用。不能直接 update 共享 mapping
+        # （merge 后多语言可能共享同一 lookup，会互相覆盖），也不能在
+        # 同一 LangSys 里留两个 locl（HarfBuzz 只执行第一个）。
+        from fontTools.otlLib.builder import buildLookup, buildSingleSubstSubtable
+        from fontTools.ttLib.tables import otTables
+        g = font['GSUB'].table
+        old_lookups = []
+        for sr in g.ScriptList.ScriptRecord:
+            if sr.ScriptTag != 'hani':
+                continue
+            for lr in sr.Script.LangSysRecord:
+                if lr.LangSysTag != lang:
+                    continue
+                for fi in lr.LangSys.FeatureIndex:
+                    fr = g.FeatureList.FeatureRecord[fi]
+                    if fr.FeatureTag == 'locl':
+                        old_lookups.extend(fr.Feature.LookupListIndex)
+                lr.LangSys.FeatureIndex = [
+                    i for i in lr.LangSys.FeatureIndex
+                    if g.FeatureList.FeatureRecord[i].FeatureTag != 'locl'
+                ]
+                lr.LangSys.FeatureCount = len(lr.LangSys.FeatureIndex)
+        st = buildSingleSubstSubtable(new_mapping)
+        lk = buildLookup([st], table='GSUB')
+        g.LookupList.Lookup.append(lk)
+        g.LookupList.LookupCount = len(g.LookupList.Lookup)
+        new_li = len(g.LookupList.Lookup) - 1
+        fr = otTables.FeatureRecord()
+        fr.FeatureTag = 'locl'
+        feat = otTables.Feature()
+        feat.FeatureParams = None
+        feat.LookupListIndex = old_lookups + [new_li]
+        feat.LookupCount = len(feat.LookupListIndex)
+        fr.Feature = feat
+        g.FeatureList.FeatureRecord.append(fr)
+        g.FeatureList.FeatureCount = len(g.FeatureList.FeatureRecord)
+        new_fi = len(g.FeatureList.FeatureRecord) - 1
+        for sr in g.ScriptList.ScriptRecord:
+            if sr.ScriptTag != 'hani':
+                continue
+            for lr in sr.Script.LangSysRecord:
+                if lr.LangSysTag == lang:
+                    lr.LangSys.FeatureIndex.append(new_fi)
+                    lr.LangSys.FeatureIndex.sort()
+                    lr.LangSys.FeatureCount = len(lr.LangSys.FeatureIndex)
+        print('installed', lang, len(new_mapping), 'variants', flush=True)
+    font.setGlyphOrder(font_order)
+    # 新增的 locl FeatureRecord 打乱了排序，audit 要求按 tag 排序
+    from layout_compat import _sort_feature_records
+    _sort_feature_records(font['GSUB'].table)
+    vf.close()
+    return total
+
 
 def shear_font(font, slant=SLANT, slant_deg=SLANT_DEG):
     """Synthetic italic: y-shear every outline so x' = x + y*slant.
@@ -172,6 +319,12 @@ def build(w,style):
     }
     m=Merger().merge([str(x) for x in source_paths])
     no=TTFont(NFILES[w]); hs=TTFont(HFILES[w]); fix_hanlink_language_systems(m,hanken_hidden,hs,no,noto_glyph_map,HALL-BC,BC)
+    if VARIANTS_DIR:
+        vp=Path(VARIANTS_DIR)/'NotoSansSC-Regular.ttf'
+        if vp.exists():
+            install_cjk_variants(m, vp, VARIANTS_LANGS)
+        else:
+            print('WARN 变体源缺失:', vp, flush=True)
     if 'prep' in hs:
         m['prep']=deepcopy(hs['prep'])
     use_noto_metrics(m,no); set_names(m,w,style,italic=ITALIC)

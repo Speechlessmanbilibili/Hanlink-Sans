@@ -1,5 +1,15 @@
 # FONTLOG
 
+## 1.300 — 2026-08-25
+
+- Added **regional glyph variants** for Traditional Chinese, Japanese, Korean, and Hong Kong Chinese: Han ideographs now switch to the regional forms (Taiwan / Japan / Korea / Hong Kong) via `locl` when the document language is `zh-TW` / `ja` / `ko` / `zh-HK`, matching the behavior of the four-in-one Noto Sans CJK release.
+- Variants are extracted from the official `googlefonts/noto-cjk` **Sans2.004 TTF-VF** (new pinned input with SHA-256), using its ready-made `locl` mappings: 25,860 mappings across ZHT/JAN/KOR/ZHH, deduplicated to 22,619 new glyphs by sharing identical regional outlines (e.g. Japan/Korea or Hong Kong/Taiwan same-shape variants).
+- The variant pipeline installs a **per-language `locl` feature** (carrying the existing bridge punctuation lookups plus the new variant lookup) instead of appending a second `locl` — HarfBuzz only executes the first duplicate feature tag, and merge-shared lookups would silently overwrite each other.
+- Fixed five latent **Extension lookup unwrapping bugs** (`st.ExtSubTable` was read before `st.ExtensionLookupType`) in `layout_compat.py`, `audit_release.py`, and `check_dash_matrix.py`; the Google Fonts Noto Sans SC distribution never triggered them, the four-in-one Noto CJK source (which wraps `locl` in Extension lookups) exposed them immediately.
+- CJK italic variants receive the same synthetic 10-degree shear as the rest of the CJK outlines.
+- Extended release audits: per-region `locl` mapping counts, TrueType glyph-count ceiling (≤ 65,535), and a new behavioral regression (`scripts/check_han_locl_alignment.py`) that verifies zh-CN output against the Google Fonts Noto Sans SC source and zh-TW/ja/ko/zh-HK outputs against the Noto CJK source.
+- README rewritten with a formal structure and a Simplified Chinese version (`README.zh-CN.md`) with language switcher; punctuation provenance documented precisely (CJK punctuation from Noto Sans SC/TC/JP/KR regional forms via the bridge, Chinese em dashes from Zhudou Sans).
+
 ## 1.200 — 2026-08-24
 
 - Added a full italic family alongside the upright family, published as a separate single-axis variable font (`HanlinkSans-Italic-Variable.ttf`) plus nine static italics, exactly mirroring the pinned Hanken Grotesk release layout.
