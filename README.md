@@ -1,8 +1,8 @@
 # Hanlink Sans
 
-**Hanlink Sans is a unified sans-serif family for Chinese and Latin mixed text.** It combines Hanken Grotesk's Western design with Noto Sans SC's CJK coverage, then adds language-aware regional punctuation through CJK Punct Bridge.
+**Hanlink Sans is a sans-serif family for Simplified Chinese and Latin mixed text.** It combines Hanken Grotesk's Western design with Noto Sans SC's Simplified Chinese coverage, then adds language-aware CJK punctuation through CJK Punct Bridge.
 
-The result is a single family that works in browsers, design software, and Microsoft Word/Office without requiring separate Latin and CJK font selections.
+The result is a single family that works in browsers, design software, and Microsoft Word/Office without requiring separate Latin and CJK font selections. Text coverage is Latin plus Simplified Chinese; Japanese kana and Korean Hangul are not embedded and fall back to system fonts, while their punctuation is still localized through the bridge.
 
 ## At a glance
 
@@ -10,10 +10,12 @@ The result is a single family that works in browsers, design software, and Micro
 | --- | --- |
 | Latin letters | Google Fonts Hanken Grotesk |
 | ASCII digits `0`–`9` | Google Fonts Hanken Grotesk in every language system |
-| Han ideographs and other Noto-covered scripts | Google Fonts Noto Sans SC |
+| Simplified Chinese Han ideographs and other Noto Sans SC-covered scripts | Google Fonts Noto Sans SC |
 | Default and Simplified Chinese punctuation | Google Fonts Noto Sans SC, with Zhudou-derived CJK dashes |
 | Traditional Chinese, Japanese, and Korean punctuation | Corresponding Google Fonts Noto Sans regional sources through CJK Punct Bridge |
 | Explicit Western-language punctuation | Hanken Grotesk for all 46 shared punctuation characters |
+
+Text coverage is Latin plus Simplified Chinese. The Traditional Chinese, Japanese, and Korean rows above apply to punctuation only — those scripts themselves are not embedded and fall back to system fonts.
 
 ## Download
 
@@ -55,9 +57,11 @@ Provide accurate language metadata whenever punctuation style matters:
 <p lang="en">English punctuation and numerals: 1,234.56.</p>
 ```
 
-A font cannot infer the language of a shared-codepoint quotation mark, comma, or em dash from surrounding text alone. The application or document must pass the language to the shaping engine for `locl` to select the intended form.
+Language metadata affects punctuation shapes only — it does not extend text coverage, which remains Latin plus Simplified Chinese. A font cannot infer the language of a shared-codepoint quotation mark, comma, or em dash from surrounding text alone. The application or document must pass the language to the shaping engine for `locl` to select the intended form.
 
 ## Language-aware punctuation
+
+Punctuation only — text coverage is unchanged (Latin + Simplified Chinese).
 
 | Language or shaping path | Result |
 | --- | --- |
@@ -82,7 +86,7 @@ ASCII digits always retain the original Hanken Grotesk outlines and metrics. Lan
 
 ## 中文简介
 
-Hanlink Sans 面向中西文混排：西文与 ASCII 数字来自 Google Fonts 的 Hanken Grotesk，汉字主体来自 Google Fonts 的 Noto Sans SC。默认与简体中文标点采用 Noto Sans SC；繁体中文、日文、韩文根据语言信息切换到对应的 Noto 地区字形；明确的西文语言则使用 Hanken 标点。中文破折号采用煮豆派生的连续形式，并保留竖排替换。
+Hanlink Sans 面向中西文混排：西文与 ASCII 数字来自 Google Fonts 的 Hanken Grotesk，简体中文字形来自 Google Fonts 的 Noto Sans SC。默认与简体中文标点采用 Noto Sans SC；繁体中文、日文、韩文的**标点**根据语言信息切换到对应的 Noto 地区字形；明确的西文语言则使用 Hanken 标点。日韩文字（假名、谚文）不在本字体覆盖范围内，会回退到系统字体。中文破折号采用煮豆派生的连续形式，并保留竖排替换。
 
 Windows 用户应在静态版和 Variable 版之间二选一，不要同时安装两套同名字体。若主要用于 Word/Office，优先选择 Static 包。
 
