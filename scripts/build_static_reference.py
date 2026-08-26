@@ -36,6 +36,18 @@ BFILES={w:BRIDGE/'fonts/static'/(f'CJKPunctBridge-Italic.ttf' if (ITALIC and w==
 # Stable unicode split from Regular
 b=TTFont(BFILES[400]); h=TTFont(HFILES[400]); n=TTFont(NFILES[400])
 BC=set(b.getBestCmap()); HALL=set(h.getBestCmap()); NALL=set(n.getBestCmap()); HC=HALL; NC=NALL
+# 谚文补全：GF 裁剪版 Noto Sans SC 不含谚文，从四地合一 Noto CJK 补
+# Hangul 音节/兼容字母/Jamo 码点（v1.3.2）
+HANGUL_CPS = set(range(0x1100, 0x1200)) | set(range(0x3130, 0x318F)) | set(range(0xA960, 0xA97D)) | set(range(0xAC00, 0xD7A4)) | set(range(0xD7B0, 0xD7FF))
+CJK_VF = SRC/'noto-cjk'/'static'/'NotoSansSC-Regular.ttf'
+if CJK_VF.exists():
+    cjk = TTFont(CJK_VF)
+    cjk_cm = cjk.getBestCmap()
+    HANGUL_PRESENT = sorted(HANGUL_CPS & set(cjk_cm))
+    NC |= set(HANGUL_PRESENT)
+    NALL |= set(HANGUL_PRESENT)
+    cjk.close()
+    print('谚文补全码点:', len(HANGUL_PRESENT), flush=True)
 b.close(); h.close(); n.close(); print('split',len(BC),len(HC),len(NC),flush=True)
 
 def copy_glyph(dst, src, sn, dn):
@@ -46,6 +58,71 @@ def copy_glyph(dst, src, sn, dn):
             dst['vmtx'].metrics[dn] = src['vmtx'].metrics[sn]
         else:
             dst['vmtx'].metrics[dn] = (1000, 0)
+
+
+def install_hanken_dlig(font, hanken_vf_path):
+    """补回 Hanken 的 dlig 规则（T+h -> T_h 等）。
+
+    Hanken 静态实例被 instancer 裁剪掉了 dlig 字形，merge 时规则随之丢失；
+    这里从 Hanken 源 VF 读回规则与字形。T_h 是 composite（组件 T/h），
+    在 Hanlink 里重建时组件引用本字体的 T/h，粗细自动匹配各权重。
+    """
+    from fontTools.otlLib.builder import buildLookup, buildLigatureSubstSubtable
+    hf = TTFont(hanken_vf_path)
+    font_order = list(font.getGlyphOrder())
+    rules = {}
+    need_glyphs = set()
+    if 'GSUB' in hf:
+        gsub = hf['GSUB'].table
+        for fr in gsub.FeatureList.FeatureRecord:
+            if fr.FeatureTag != 'dlig':
+                continue
+            for li in fr.Feature.LookupListIndex:
+                lk = gsub.LookupList.Lookup[li]
+                for st in lk.SubTable:
+                    typ = lk.LookupType
+                    if typ == 7:
+                        typ = st.ExtensionLookupType
+                        st = st.ExtSubTable
+                    if typ == 4 and hasattr(st, 'ligatures'):
+                        for first, ligs in st.ligatures.items():
+                            for lig in ligs:
+                                seq = (first,) + tuple(lig.Component)
+                                rules[seq] = lig.LigGlyph
+                                need_glyphs.add(lig.LigGlyph)
+    copied = 0
+    for gn in need_glyphs:
+        if gn in font_order or gn not in hf['glyf']:
+            continue
+        g = hf['glyf'][gn]
+        if g.numberOfContours < 0:
+            if not all(c.glyphName in font_order for c in g.components):
+                continue
+        font['glyf'][gn] = deepcopy(g)
+        font['hmtx'].metrics[gn] = hf['hmtx'].metrics[gn]
+        if 'vmtx' in font:
+            font['vmtx'].metrics[gn] = (1000, 0)
+        font_order.append(gn)
+        copied += 1
+    font.setGlyphOrder(font_order)
+    hf.close()
+    if not rules:
+        return
+    valid = {seq: t for seq, t in rules.items()
+             if all(s in font_order for s in seq) and t in font_order}
+    if not valid:
+        return
+    st = buildLigatureSubstSubtable(valid)
+    lk = buildLookup([st], table='GSUB')
+    gsub = font['GSUB'].table
+    gsub.LookupList.Lookup.append(lk)
+    gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
+    new_li = len(gsub.LookupList.Lookup) - 1
+    for fr in gsub.FeatureList.FeatureRecord:
+        if fr.FeatureTag == 'dlig':
+            fr.Feature.LookupListIndex.append(new_li)
+            fr.Feature.LookupCount = len(fr.Feature.LookupListIndex)
+    print('installed hanken dlig:', len(valid), 'rules,', copied, 'glyphs', flush=True)
 
 
 def install_cjk_variants(font, variants_path, lang_tags):
@@ -298,6 +375,32 @@ def build(w,style):
     hsaved=TTFont(hp,lazy=True); hanken_saved_order=list(hsaved.getGlyphOrder()); hsaved.close()
     hanken_orig_to_saved=dict(zip(hanken_pre_order,hanken_saved_order))
     nf=subset_font(TTFont(NFILES[w]),NC); noto_pre_order=list(nf.getGlyphOrder()); remove_cmap_codepoints(nf,BC|HALL); drop_unmergeable_base_varstore(nf)
+    if HANGUL_PRESENT:
+        # 谚文字形：GF 版没有，从四地合一 Noto CJK 的**对应权重**静态拷贝
+        cjk=TTFont(SRC/'noto-cjk'/'static'/f'NotoSansSC-{style}.ttf')
+        cjk_cm=cjk.getBestCmap(); nf_cm=nf.getBestCmap(); order_nf=list(nf.getGlyphOrder())
+        added=0
+        for cp in HANGUL_PRESENT:
+            if cp in nf_cm: continue
+            gn=cjk_cm.get(cp)
+            if gn is None or gn not in cjk['glyf']: continue
+            from copy import deepcopy
+            nf['glyf'][gn]=deepcopy(cjk['glyf'][gn])
+            nf['hmtx'].metrics[gn]=cjk['hmtx'].metrics[gn]
+            if 'vmtx' in nf:
+                nf['vmtx'].metrics[gn]=(1000,0)
+            if gn not in order_nf:
+                order_nf.append(gn)
+            nf_cm[cp]=gn
+            added+=1
+        nf.setGlyphOrder(order_nf)
+        nf['glyf'].glyphOrder=order_nf
+        for table in nf['cmap'].tables:
+            if hasattr(table,'cmap'):
+                for cp in HANGUL_PRESENT:
+                    if cp in nf_cm: table.cmap[cp]=nf_cm[cp]
+        cjk.close()
+        print('谚文补全字形:',added,flush=True)
     if ITALIC:
         shear_font(nf)
     nf.save(np); nf.close()
@@ -325,6 +428,9 @@ def build(w,style):
             install_cjk_variants(m, vp, VARIANTS_LANGS)
         else:
             print('WARN 变体源缺失:', vp, flush=True)
+    hanken_vf = SRC/'hanken'/(f'HankenGrotesk-Italic-VariableFont_wght.ttf' if ITALIC else f'HankenGrotesk-VariableFont_wght.ttf')
+    if hanken_vf.exists():
+        install_hanken_dlig(m, hanken_vf)
     if 'prep' in hs:
         m['prep']=deepcopy(hs['prep'])
     use_noto_metrics(m,no); set_names(m,w,style,italic=ITALIC)

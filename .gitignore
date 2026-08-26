@@ -6,3 +6,7 @@ fonts/**/*.ttf
 fonts/**/*.otf
 fonts/**/*.woff
 fonts/**/*.woff2
+*.zip
+fonts-interrobang/
+hanlink-*-inter*.png
+th-grotesk-*.png
