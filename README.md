@@ -2,89 +2,81 @@
 
 **Languages:** English | [简体中文](README.zh-CN.md)
 
-**Hanlink Sans** is a unified sans-serif type family designed for Chinese–English
-mixed text. It pairs Hanken Grotesk's Latin design with the Noto Sans CJK
-character set, adds language-aware regional punctuation through CJK Punct
-Bridge, and — since v1.3.0 — carries regional **glyph variants** for
-Traditional Chinese, Japanese, Korean, and Hong Kong Chinese, switched
-automatically by document language.
+**Hanlink Sans is a unified sans-serif family for Chinese and Latin mixed text.** It combines Hanken Grotesk's Western design with Noto Sans SC's CJK coverage, then adds language-aware regional punctuation through CJK Punct Bridge.
 
-One family, one font selection, for mixed Chinese–English typography in
-browsers, design software, and Microsoft Word/Office.
+The result is a single family that works in browsers, design software, and Microsoft Word/Office without requiring separate Latin and CJK font selections.
 
-## Features
+## Release status
 
-- **Chinese–Latin mixed text in one family** — no separate Latin/CJK font
-  selection; language tags drive both punctuation and glyph forms.
-- **GBK-aligned Han ideographs** — Simplified Chinese plus
-  mainland-standard Traditional characters, Japanese kana, Cantonese
-  characters, and Bopomofo, carried by the pinned Noto Sans CJK source
-  (see [Coverage](#coverage)).
-- **Regional glyph variants (v1.3.0)** — with `lang="zh-TW"`, `"ja"`,
-  `"ko"`, or `"zh-HK"`, Han ideographs automatically switch to the
-  corresponding regional forms (Taiwan, Japan, Korea, Hong Kong) through
-  OpenType `locl`, exactly as in the four-in-one Noto Sans CJK release.
-- **Hanken `dlig` fully restored (v1.3.1)** — the optional `T+h → T_h`
-  ligature of Hanken Grotesk (plus all other Hanken discretionary
-  ligatures) is preserved in both the static and variable fonts; static
-  builds no longer drop the ligature glyphs that the instancer trimmed.
-- **Language-aware punctuation** — Simplified/Traditional Chinese, Japanese,
-  and Korean punctuation forms selected per language through CJK Punct
-  Bridge; explicit Western languages use Hanken Grotesk punctuation.
-- **True italic Latin, synthetic italic CJK** — Latin italics use Hanken
-  Grotesk's genuine italic designs; CJK italics use a uniform 10-degree
-  synthetic slant (no true CJK italic design exists).
-- **Full OpenType behavior** — `liga`, `dlig`, `case`, `frac`, `ordn`,
-  `sups`, `ss01`–`ss03`, kerning, `locl`, vertical layout (`vert`, `vrt2`,
-  `vhea`, `vmtx`), and Zhudou-derived continuous CJK dashes.
+**v1.2.1 is the current recommended stable release and active build scope.**
 
-## Coverage
+The `v1.3.0`, `v1.3.1`, and `v1.3.2` tags, release assets, source history,
+and feature descriptions are retained for reference, but those releases are
+classified as experimental and withdrawn from the stable recommendation.
+Their regional-variant and full-Hangul expansion pushed the variable fonts to
+about 65,214 glyphs and the `gvar` table beyond 64 MiB. In Microsoft
+Word/Office through Windows GDI, selecting Bold can then leave the rendered
+outline near the default weight instead of using the true 700 instance.
 
-Text coverage is Latin plus the pinned Noto Sans CJK character set:
+The v1.3 static faces do not show the same variable-font failure, but the v1.3
+line as a whole is no longer recommended. No v1.3 tag or historical description
+has been deleted.
 
-| Script / group | Coverage |
+## At a glance
+
+| Character group | Design source |
 | --- | --- |
-| Latin letters and digits `0`–`9` | Hanken Grotesk (digits are Hanken-owned in every language system) |
-| Han ideographs | GBK-aligned: Simplified Chinese and mainland-standard Traditional characters, plus regional variants (Taiwan/Japan/Korea/Hong Kong) |
-| Japanese kana | Hiragana and katakana (full coverage) |
-| Cantonese characters | Common Cantonese written characters (嘅、啲、嚟、咗、喺…) |
-| Bopomofo | Full coverage of the 43 phonetic symbols |
-| Korean Hangul | **Full coverage (v1.3.2)** — syllables (11,172), compatible jamo letters, and jamo blocks, from the four-in-one Noto CJK source |
-| CJK punctuation | Noto Sans SC/TC/JP/KR regional forms through CJK Punct Bridge; Chinese em dashes (`U+2014` and relatives) from Zhudou Sans |
-| Western punctuation | Hanken Grotesk for all 46 shared punctuation characters |
-
-The v1.3.0 regional glyph variants cover the differences between
-Simplified Chinese and the Taiwan, Japan, Korea, and Hong Kong forms for
-25,860 `locl` mappings (shared outlines are deduplicated, adding 22,619
-glyphs). Since v1.3.2, Korean Hangul is fully included as well
-(11,172 syllables, compatible jamo letters, and jamo blocks), and its
-**punctuation** remains localized through the bridge.
+| Latin letters | Google Fonts Hanken Grotesk |
+| ASCII digits `0`–`9` | Google Fonts Hanken Grotesk in every language system |
+| Han ideographs and other Noto-covered scripts | Google Fonts Noto Sans SC |
+| Default and Simplified Chinese punctuation | Google Fonts Noto Sans SC, with Zhudou-derived CJK dashes |
+| Traditional Chinese, Japanese, and Korean punctuation | Corresponding Google Fonts Noto Sans regional sources through CJK Punct Bridge |
+| Explicit Western-language punctuation | Hanken Grotesk for all 46 shared punctuation characters |
 
 ## Download
 
-Download the latest release from
-[GitHub Releases](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/latest).
+Download the recommended stable release from
+[GitHub Releases v1.2.1](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.1).
+
 | Package | Contents | Best for |
 | --- | --- | --- |
-| `Hanlink-Sans-v1.3.2-Static.zip` | Eighteen TTF faces: nine upright weights plus nine italics, Thin 100 through Black 900 | Any application; static faces are the safest choice for legacy software |
-| `Hanlink-Sans-v1.3.2-Variable.zip` | Two variable TTFs with `wght` 100–900, default 400: upright and italic | Modern browsers, design software, and Microsoft Word/Office (variable-font support is well established there) |
+| `Hanlink-Sans-v1.2.1-Static.zip` | Eighteen TTF faces: nine upright weights plus nine italics, Thin 100 through Black 900 | Windows, Word/Office, and applications with conservative variable-font support |
+| `Hanlink-Sans-v1.2.1-Variable.zip` | Two variable TTFs with `wght` 100–900, default 400: upright and italic | Modern browsers and applications with reliable variable-font support |
+| `Hanlink-Interrobang-v1.2.1-Static.zip` | Optional `Hanlink ?!` family, eighteen static TTF faces | Office-compatible optional ligature family |
+| `Hanlink-Interrobang-v1.2.1-Variable.zip` | Optional `Hanlink ?!` upright and italic variable TTFs | Applications with reliable variable-font support |
 
-The italic family mirrors the pinned Hanken Grotesk release layout:
-upright and italic are separate single-axis variable fonts sharing the
-**Hanlink Sans** family name.
+The italic family uses the same release layout as the pinned Hanken Grotesk
+upstream: upright and italic are separate single-axis variable fonts sharing
+the **Hanlink Sans** family name. In italics, Latin uses Hanken Grotesk's true
+italic designs; CJK characters and punctuation use a uniform synthetic
+10-degree slant (no true CJK italic design exists).
 
-> On Windows, install either the static family or the variable font, not
-> both. They intentionally share the family name **Hanlink Sans**, so
-> installing both can create duplicate or ambiguous faces in font menus.
+> On Windows, install either the static family or the variable font, not both. They intentionally share the family name **Hanlink Sans**, so installing both can create duplicate or ambiguous faces in font menus.
 
-The static family uses Office-compatible legacy weight linking for
-non-Regular/Bold faces while retaining `Hanlink Sans` as the typographic
-family name.
+The static family uses Office-compatible legacy weight linking for non-Regular/Bold faces while retaining `Hanlink Sans` as the typographic family name.
+
+## Hanlink ?!
+
+**Hanlink ?!** is the ligature variant built from the same v1.2.1 static
+masters. Its default `liga` behavior turns `?!`, `!?`, `？！`, and `！？` into
+an interrobang form and enables the Hanken `T+h` ligature. The `U+203D`
+outline comes from pinned Inter 4.001 upright/italic variable sources and is
+instantiated at each matching weight, so Thin, Regular, Bold, and Black do not
+reuse one fixed outline.
+
+| Output | Contents |
+| --- | --- |
+| `fonts-interrobang/static/` | Nine upright and nine italic static faces |
+| `HanlinkSansInterrobang-Variable.ttf` | Upright `wght` 100–900 |
+| `HanlinkSansInterrobang-Italic-Variable.ttf` | Italic `wght` 100–900 |
+
+The `?!` variable build rejects a `gvar` table at or above 64 MiB and verifies
+its named instances against the corresponding static masters before accepting
+the output.
 
 ## Use
 
-After installing the font, select **Hanlink Sans** as a single family. On
-the web:
+After installing the font, select **Hanlink Sans** as a single family. On the web:
 
 ```css
 body {
@@ -93,49 +85,50 @@ body {
 }
 ```
 
-Provide accurate language metadata whenever punctuation or regional glyph
-forms matter:
+Provide accurate language metadata whenever punctuation style matters:
 
 ```html
-<p lang="zh-CN">简体中文，使用简体中文标点和字形。</p>
-<p lang="zh-TW">繁體中文，使用繁體中文標點與字形。</p>
-<p lang="zh-HK">香港繁體，使用港式字形。</p>
-<p lang="ja">日本語の句読点と字形。</p>
+<p lang="zh-CN">简体中文，使用简体中文标点。</p>
+<p lang="zh-TW">繁體中文，使用繁體中文標點。</p>
+<p lang="ja">日本語の句読点。</p>
 <p lang="ko">한국어 문장 부호.</p>
 <p lang="en">English punctuation and numerals: 1,234.56.</p>
 ```
 
-Language metadata affects **punctuation shapes** and **regional glyph
-variants** only — it does not extend text coverage. A font cannot infer the
-language of shared-codepoint characters from surrounding text alone; the
-application or document must pass the language to the shaping engine.
+A font cannot infer the language of a shared-codepoint quotation mark, comma, or em dash from surrounding text alone. The application or document must pass the language to the shaping engine for `locl` to select the intended form.
+
+## Language-aware punctuation
+
+| Language or shaping path | Result |
+| --- | --- |
+| No language / default LangSys | Noto Sans SC punctuation |
+| Simplified or phonetic Chinese | Noto Sans SC punctuation |
+| Traditional Chinese, including Hong Kong and Macao | Noto Sans TC punctuation |
+| Japanese | Noto Sans JP punctuation |
+| Korean and old Hangul | Noto Sans KR punctuation |
+| Configured explicit Western languages in Common, Latin, Cyrillic, or Greek runs | Hanken Grotesk punctuation where covered |
+
+ASCII digits always retain the original Hanken Grotesk outlines and metrics. Language switching changes punctuation, never `0`–`9`.
 
 ## OpenType behavior
 
-- Latin text retains Hanken Grotesk features: `liga`, `dlig`, `case`,
-  `frac`, `ordn`, `sups`, `dnom`, `numr`, `ss01`–`ss03`, kerning, and
-  language-specific `locl`.
-- `locl` drives regional glyph variants for Traditional Chinese, Japanese,
-  Korean, and Hong Kong Chinese (v1.3.0), plus regional punctuation through
-  the bridge.
-- Default and CJK `U+2014` use a Zhudou-derived CJK em dash; repeated
-  `——` and `———` form continuous two-em and three-em dashes through `ccmp`.
-- Explicit Western-language paths keep repeated em dashes as separate
-  Hanken glyphs.
-- Noto CJK layout behavior is retained and repaired across the
-  Hanken/Noto glyph-ownership boundary.
+- Latin text retains Hanken Grotesk features including `liga`, `dlig`, `case`, `frac`, `ordn`, `sups`, `dnom`, `numr`, `ss01`–`ss03`, kerning, and language-specific `locl`.
+- Default and CJK `U+2014` use a Zhudou-derived CJK em dash; repeated `——` and `———` form continuous two-em and three-em dashes through `ccmp`.
+- Explicit Western-language paths keep repeated em dashes as separate Hanken glyphs.
+- Noto CJK layout behavior is retained and repaired across the Hanken/Noto glyph-ownership boundary.
 - `vert`, `vrt2`, `vhea`, and `vmtx` are included for vertical CJK layout.
-- The variable fonts are built with fontTools varLib from the audited
-  static masters, with a `wght` axis from 100 to 900 (upright and italic).
+- The variable font is built with fontTools varLib from nine audited static masters, with a `wght` axis from 100 to 900. The italic variable font is built the same way from the nine italic static masters.
+- Italic Latin keeps the Hanken Grotesk Italic design; CJK italics are synthetic 10-degree slants, unhinted but with preserved point structure for interpolation.
 
-## Building and verification
+## 中文简介
 
-The repository contains the complete build pipeline, pinned source hashes,
-structural audits, dash matrices, and direct HarfBuzz/RAQM regressions.
-All inputs come from immutable upstream releases: Google Fonts repository
-files for Hanken Grotesk and the Google Fonts Noto Sans SC distribution,
-and the official `googlefonts/noto-cjk` Sans2.004 TTF-VF for regional
-glyph variants.
+Hanlink Sans 面向中西文混排：西文与 ASCII 数字来自 Google Fonts 的 Hanken Grotesk，汉字主体来自 Google Fonts 的 Noto Sans SC。默认与简体中文标点采用 Noto Sans SC；繁体中文、日文、韩文根据语言信息切换到对应的 Noto 地区字形；明确的西文语言则使用 Hanken 标点。中文破折号采用煮豆派生的连续形式，并保留竖排替换。
+
+Windows 用户应在静态版和 Variable 版之间二选一，不要同时安装两套同名字体。若主要用于 Word/Office，优先选择 Static 包。
+
+## Reproducible builds and verification
+
+The repository contains the complete build pipeline, pinned source hashes, structural audits, dash matrices, and direct HarfBuzz/RAQM regressions. Noto Sans SC and Hanken Grotesk come exclusively from immutable Google Fonts repository files.
 
 ```bash
 python scripts/fetch_sources.py
@@ -143,44 +136,20 @@ python scripts/build_static_reference.py
 HANLINK_ITALIC=1 python scripts/build_static_reference.py
 python scripts/build_variable_reference.py
 HANLINK_ITALIC=1 python scripts/build_variable_reference.py
+INTER_VF=sources/inter/InterVariable.ttf python scripts/build_interrobang.py
+HANLINK_ITALIC=1 INTER_VF=sources/inter/InterVariable-Italic.ttf python scripts/build_interrobang.py
+python scripts/build_variable_interrobang.py
+HANLINK_ITALIC=1 python scripts/build_variable_interrobang.py
 python scripts/audit_release.py fonts/static/*.ttf fonts/variable/*.ttf
 python scripts/check_dash_matrix.py fonts/static/*.ttf fonts/variable/*.ttf
-python scripts/check_han_locl_alignment.py
 python scripts/render_regression.py
 HANLINK_ITALIC_TEST=1 python scripts/render_regression.py
 ```
 
-The regional variant pipeline extracts the `locl` mappings of the
-four-in-one Noto Sans CJK source (ZHT / JAN / KOR / ZHH), copies the
-variant glyphs into Hanlink (deduplicating shared outlines), and installs
-a per-language `locl` feature that also carries the existing bridge
-punctuation lookups.
-
-See [BUILDING.md](BUILDING.md), [SOURCES.md](SOURCES.md), and
-[FONTLOG.md](FONTLOG.md) for the merge strategy, exact source revisions,
-and release history.
-
-## 中文简介
-
-Hanlink Sans 的定位是中西文（简体中文与英文）混排排版。西文与 ASCII 数字来自
-Google Fonts 的 Hanken Grotesk；汉字（GBK 对齐：简体与大陆标准繁体）、日文
-假名、粤语字、注音符号与谚文（v1.3.2 起）来自固定的 Noto Sans CJK 源。
-v1.3.0 起，繁体中文、日文、韩文与港式中文的**正文字形**会随语言标签自动
-切换为对应地区写法（如 zh-TW 下「骨」「為」自动变为台湾字形），与标点切换
-机制同源；v1.3.1 补全 Hanken 的 Th 连字等可选连字。默认与简体中文标点采用
-Noto Sans SC，明确的西文语言使用 Hanken 标点。中文破折号采用煮豆派生的
-连续形式，并保留竖排替换。
-
-Windows 用户应在静态版和 Variable 版之间二选一，不要同时安装两套同名字体；
-两者在 Word/Office 与浏览器中均可正常使用。
+See [BUILDING.md](BUILDING.md), [SOURCES.md](SOURCES.md), and [FONTLOG.md](FONTLOG.md) for the merge strategy, exact source revisions, and release history.
 
 ## License and naming
 
-Hanlink Sans is distributed under the [SIL Open Font License 1.1](OFL.txt).
-It is a modified and combined font, not an official release of any upstream
-project.
+Hanlink Sans is distributed under the [SIL Open Font License 1.1](OFL.txt). It is a modified and combined font, not an official release of any upstream project.
 
-The upstream licenses reserve the names `Source`, `Zhudou`, and `煮豆`; the
-family name **Hanlink Sans** does not use those reserved names. See
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses](licenses/)
-for attribution and bundled licenses.
+The upstream licenses reserve the names `Source`, `Zhudou`, and `煮豆`; the family name **Hanlink Sans** does not use those reserved names. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses](licenses/) for attribution and bundled licenses.

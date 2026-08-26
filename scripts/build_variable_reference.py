@@ -54,7 +54,8 @@ def set_names(font):
     os2.usWeightClass = 400
     for bit in (0, 5, 6, 9):
         os2.fsSelection &= ~(1 << bit)
-    os2.fsSelection |= 1 << 6
+    if not ITALIC:
+        os2.fsSelection |= 1 << 6
     if ITALIC:
         os2.fsSelection |= 1 << 0
     font["head"].macStyle &= ~3

@@ -120,30 +120,13 @@ def audit(path):
         assert (axis.minValue,axis.defaultValue,axis.maxValue)==(100.0,400.0,900.0)
         assert len(f['fvar'].instances)==9
     italic=bool(f['OS/2'].fsSelection & 1)
+    regular=bool(f['OS/2'].fsSelection & (1<<6))
     if italic:
+        assert not regular,(path,'italic and regular fsSelection bits conflict')
         assert f['head'].macStyle & 2,(path,'italic macStyle missing')
         assert f['post'].italicAngle<0,(path,'italicAngle not negative')
         sub=f['name'].getDebugName(2)
         assert sub and sub.endswith('Italic'),(path,'subfamily',sub)
-    # CJK 区域字形变体（v1.3.0）：四语言 locl 映射完整 + 字形上限
-    assert len(f.getGlyphOrder())<=65535,(path,'glyph count exceeds TrueType limit')
-    if 'GSUB' in f and not italic:
-        gsub=f['GSUB'].table
-        for sr in gsub.ScriptList.ScriptRecord:
-            if sr.ScriptTag!='hani':continue
-            for lr in sr.Script.LangSysRecord:
-                if lr.LangSysTag not in ('ZHT ','JAN ','KOR ','ZHH '):continue
-                locl_n=0
-                for fi in lr.LangSys.FeatureIndex:
-                    fr=gsub.FeatureList.FeatureRecord[fi]
-                    if fr.FeatureTag!='locl':continue
-                    for li in fr.Feature.LookupListIndex:
-                        lk=gsub.LookupList.Lookup[li]
-                        for st in lk.SubTable:
-                            typ=lk.LookupType
-                            if typ==7:typ=st.ExtensionLookupType;st=st.ExtSubTable
-                            if typ==1 and hasattr(st,'mapping'):locl_n+=len(st.mapping)
-                assert locl_n>5000,(path,'hani',lr.LangSysTag,'区域 locl 映射缺失',locl_n)
     f.close()
 
 def audit_hanken_provenance(path,source_path):

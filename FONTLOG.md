@@ -1,14 +1,40 @@
 # FONTLOG
 
-## 1.300 — 2026-08-25
+## 1.210 / v1.2.1 — 2026-08-27
 
-- Added **regional glyph variants** for Traditional Chinese, Japanese, Korean, and Hong Kong Chinese: Han ideographs now switch to the regional forms (Taiwan / Japan / Korea / Hong Kong) via `locl` when the document language is `zh-TW` / `ja` / `ko` / `zh-HK`, matching the behavior of the four-in-one Noto Sans CJK release.
+- Restored the v1.2 build scope as the recommended stable line and advanced it to **1.210 / v1.2.1** without deleting any later tag, commit, release asset, or historical description.
+- Classified v1.3.0 through v1.3.2 as experimental and withdrew them from the stable recommendation after reproducing a Windows Office/GDI variable-font regression: Bold is selected, but the rendered outline remains near the default weight.
+- Isolated the regression to the v1.3 expansion in font volume. The v1.2 upright variable font has 32,578 glyphs and a 55,107,976-byte `gvar`; the v1.3.2 `Hanlink ?!` variable font has 65,214 glyphs and a 67,883,706-byte `gvar`, beyond the 64 MiB compatibility boundary.
+- Rebased the `Hanlink ?!` build on the v1.2 static masters, changed Inter `U+203D` import to instantiate every requested `wght`, and added a variable-font size guard plus endpoint/default validation.
+- Corrected italic `OS/2.fsSelection`, `macStyle`, and legacy/typographic subfamily naming in the standard and `?!` families; italic faces no longer set `REGULAR`.
+- Verified through private-font Windows GDI rendering that requested weight 700 is materially heavier than 400 and closely matches the static Bold face.
+
+## Experimental / withdrawn v1.3.x history
+
+The following versions remain available as historical experiments, but are not
+recommended as the active release line because of the Office/GDI variable-font
+weight regression described above.
+
+### 1.320 / v1.3.2 — 2026-08-26
+
+- Added full Korean Hangul coverage: 11,172 syllables, compatible jamo letters, and jamo blocks from the four-in-one Noto CJK source.
+- Added the `Hanlink ?!` interrobang/Th-ligature build scripts and the separate Th Grotesk experiment.
+- Corrected the internal v1.3.2 font metadata revision from 1.310 to 1.320.
+- Retained the bilingual README rewrite and the complete v1.3.2 build history for archival reference.
+
+### 1.310 / v1.3.1 — 2026-08-26
+
+- Restored Hanken Grotesk's optional `T+h -> T_h` discretionary ligature and other `dlig` behavior in static and variable builds after static instancing had trimmed the source ligature glyph.
+
+### 1.300 / v1.3.0 — 2026-08-25
+
+- Added **regional glyph variants** for Traditional Chinese, Japanese, Korean, and Hong Kong Chinese: Han ideographs switch to the regional forms (Taiwan / Japan / Korea / Hong Kong) via `locl` when the document language is `zh-TW` / `ja` / `ko` / `zh-HK`, matching the behavior of the four-in-one Noto Sans CJK release.
 - Variants are extracted from the official `googlefonts/noto-cjk` **Sans2.004 TTF-VF** (new pinned input with SHA-256), using its ready-made `locl` mappings: 25,860 mappings across ZHT/JAN/KOR/ZHH, deduplicated to 22,619 new glyphs by sharing identical regional outlines (e.g. Japan/Korea or Hong Kong/Taiwan same-shape variants).
-- The variant pipeline installs a **per-language `locl` feature** (carrying the existing bridge punctuation lookups plus the new variant lookup) instead of appending a second `locl` — HarfBuzz only executes the first duplicate feature tag, and merge-shared lookups would silently overwrite each other.
-- Fixed five latent **Extension lookup unwrapping bugs** (`st.ExtSubTable` was read before `st.ExtensionLookupType`) in `layout_compat.py`, `audit_release.py`, and `check_dash_matrix.py`; the Google Fonts Noto Sans SC distribution never triggered them, the four-in-one Noto CJK source (which wraps `locl` in Extension lookups) exposed them immediately.
+- The variant pipeline installs a **per-language `locl` feature** (carrying the existing bridge punctuation lookups plus the new variant lookup) instead of appending a second `locl`; HarfBuzz only executes the first duplicate feature tag, and merge-shared lookups would silently overwrite each other.
+- Fixed five latent **Extension lookup unwrapping bugs** in `layout_compat.py`, `audit_release.py`, and `check_dash_matrix.py`; the four-in-one Noto CJK source exposed them because it wraps `locl` in Extension lookups.
 - CJK italic variants receive the same synthetic 10-degree shear as the rest of the CJK outlines.
-- Extended release audits: per-region `locl` mapping counts, TrueType glyph-count ceiling (≤ 65,535), and a new behavioral regression (`scripts/check_han_locl_alignment.py`) that verifies zh-CN output against the Google Fonts Noto Sans SC source and zh-TW/ja/ko/zh-HK outputs against the Noto CJK source.
-- README rewritten with a formal structure and a Simplified Chinese version (`README.zh-CN.md`) with language switcher; punctuation provenance documented precisely (CJK punctuation from Noto Sans SC/TC/JP/KR regional forms via the bridge, Chinese em dashes from Zhudou Sans).
+- Extended release audits with per-region `locl` mapping counts, the TrueType glyph-count ceiling, and `scripts/check_han_locl_alignment.py` for direct regional shaping comparison.
+- Rewrote the README in English and Simplified Chinese and documented punctuation provenance precisely.
 
 ## 1.200 — 2026-08-24
 

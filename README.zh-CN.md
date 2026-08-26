@@ -2,23 +2,31 @@
 
 **语言：** [English](README.md) | 简体中文
 
-**Hanlink Sans** 是专为中西文（中文与英文）混排设计的一套无衬线字体家族。它
-将 Hanken Grotesk 的拉丁字形与 Noto Sans CJK 的字符集结合，通过 CJK Punct
-Bridge 提供语言感知的区域标点，并且自 v1.3.0 起内置**区域字形变体**——繁体
-中文、日文、韩文与港式中文的字形会随文档语言自动切换。
+**Hanlink Sans** 是专为中西文混排设计的一套无衬线字体家族。它将 Hanken
+Grotesk 的西文设计与 Noto Sans SC 的 CJK 覆盖合并，再通过 CJK Punct
+Bridge 提供按语言切换的区域标点。
 
 一个家族、一次字体选择，即可在浏览器、设计软件与 Microsoft Word/Office 中
 获得顺畅的中西文混排体验。
 
+## 版本状态
+
+**v1.2.1 是当前推荐的稳定版，也是主分支当前采用的构建范围。**
+
+`v1.3.0`、`v1.3.1`、`v1.3.2` 的标签、Release 文件、提交历史与功能说明
+全部保留，但这些版本现归类为实验版，并已撤回稳定版推荐。v1.3 的区域字形
+与完整谚文扩展使变量字体增长到约 65,214 个字形，`gvar` 表超过 64 MiB；
+Microsoft Word/Office 经 Windows GDI 使用这类变量字体时，虽然界面已选择
+粗体，实际轮廓仍可能停留在接近默认字重的位置，而非真正的 700 字重。
+
+v1.3 静态字体未复现相同的变量字体故障，但 v1.3 整条版本线均不再作为当前
+稳定版推荐。历史版本没有被删除。
+
 ## 特性
 
-- **中西文混排一个家族**——无需分别选择拉丁与 CJK 字体；语言标签同时驱动
-  标点与字形形态。
+- **中西文混排一个家族**——无需分别选择拉丁与 CJK 字体。
 - **GBK 对齐的汉字**——简体中文及大陆标准繁体字、日文假名、粤语字与注音
   符号，来自固定的 Noto Sans CJK 源（见[覆盖范围](#覆盖范围)）。
-- **区域字形变体（v1.3.0）**——设置 `lang="zh-TW"`、`"ja"`、`"ko"` 或
-  `"zh-HK"` 时，汉字通过 OpenType `locl` 自动切换为对应地区写法（台湾、
-  日本、韩国、香港），与四地合一的 Noto Sans CJK 行为一致。
 - **语言感知标点**——简体/繁体中文、日文、韩文标点按语言经 CJK Punct
   Bridge 切换；明确的西文语言使用 Hanken Grotesk 标点。
 - **拉丁真斜体、中文合成斜体**——拉丁斜体采用 Hanken Grotesk 官方斜体
@@ -38,24 +46,23 @@ Bridge 提供语言感知的区域标点，并且自 v1.3.0 起内置**区域字
 | 日文假名 | 平假名与片假名（完整覆盖） |
 | 粤语字 | 常用粤语书写字（嘅、啲、嚟、咗、喺…） |
 | 注音符号 | 43 个注音符号完整覆盖 |
-| 谚文（韩文） | **完整覆盖（v1.3.2）**——音节 11,172、兼容谚文字母与 Jamo 区块，来自四地合一 Noto CJK 源 |
 | CJK 标点 | 经 CJK Punct Bridge 提供 Noto Sans SC/TC/JP/KR 区域形式；中文破折号（`U+2014` 等）来自煮豆黑体 |
 | 西文标点 | 46 个共享标点字符全部使用 Hanken Grotesk |
 
-v1.3.0 的区域字形变体覆盖简体中文与台湾、日本、韩国、香港写法之间的差异，
-共 25,860 条 `locl` 映射（共享轮廓去重后实际新增 22,619 个字形）。自
-v1.3.2 起谚文也完整纳入（11,172 个音节、兼容谚文字母与 Jamo 区块），
-其**标点**仍经桥接层按语言本地化。
+当前 v1.2 稳定构建不包含 v1.3 的区域汉字扩展与完整谚文扩展；这些实验功能
+的说明保留在下方历史章节和 [FONTLOG.md](FONTLOG.md) 中。
 
 ## 下载
 
-从 [GitHub Releases](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/latest)
-下载最新版本。
+从 [GitHub Releases v1.2.1](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.1)
+下载当前推荐稳定版。
 
 | 安装包 | 内容 | 适用场景 |
 | --- | --- | --- |
-| `Hanlink-Sans-v1.3.2-Static.zip` | 十八个 TTF：九个正体 + 九个斜体，Thin 100 至 Black 900 | 任意应用；对旧软件最稳妥的选择 |
-| `Hanlink-Sans-v1.3.2-Variable.zip` | 两个可变 TTF：正体与斜体，`wght` 100–900，默认 400 | 现代浏览器、设计软件与 Microsoft Word/Office（可变字体支持已成熟） |
+| `Hanlink-Sans-v1.2.1-Static.zip` | 十八个 TTF：九个正体 + 九个斜体，Thin 100 至 Black 900 | Windows、Word/Office，以及对变量字体支持较保守的软件 |
+| `Hanlink-Sans-v1.2.1-Variable.zip` | 两个可变 TTF：正体与斜体，`wght` 100–900，默认 400 | 对变量字体支持可靠的浏览器与设计软件 |
+| `Hanlink-Interrobang-v1.2.1-Static.zip` | 可选 `Hanlink ?!` 家族，十八个静态 TTF | 兼容 Office 的可选连字家族 |
+| `Hanlink-Interrobang-v1.2.1-Variable.zip` | 可选 `Hanlink ?!` 正体与斜体变量 TTF | 对变量字体支持可靠的软件 |
 
 斜体家族沿用 Hanken Grotesk 的发布形式：正体与斜体是各自独立的单轴可变
 字体，共享 **Hanlink Sans** 家族名。
@@ -65,6 +72,23 @@ v1.3.2 起谚文也完整纳入（11,172 个音节、兼容谚文字母与 Jamo 
 
 静态家族为非常规/粗体字重提供 Office 兼容的旧式字重链接，同时保留
 `Hanlink Sans` 作为排版家族名。
+
+## Hanlink ?!
+
+**Hanlink ?!** 是从同一套 v1.2.1 静态母版构建的连字变体。默认 `liga`
+会把 `?!`、`!?`、`？！`、`！？` 合成为 interrobang 形式，并启用 Hanken
+的 `T+h` 连字。`U+203D` 轮廓来自固定哈希的 Inter 4.001 正体/斜体变量
+源，并在每个母版上按对应 `wght` 实例化，因此 Thin、Regular、Bold、Black
+不会重复使用同一个固定轮廓。
+
+| 输出 | 内容 |
+| --- | --- |
+| `fonts-interrobang/static/` | 九个正体与九个斜体静态字面 |
+| `HanlinkSansInterrobang-Variable.ttf` | 正体 `wght` 100–900 |
+| `HanlinkSansInterrobang-Italic-Variable.ttf` | 斜体 `wght` 100–900 |
+
+`?!` 变量构建会拒绝大于等于 64 MiB 的 `gvar` 表，并将变量字体命名实例
+与对应静态母版逐一核对。
 
 ## 使用
 
@@ -77,18 +101,17 @@ body {
 }
 ```
 
-在标点或区域字形需要区分的场景，请提供准确的语言元数据：
+在标点地区形式需要区分的场景，请提供准确的语言元数据：
 
 ```html
-<p lang="zh-CN">简体中文，使用简体中文标点和字形。</p>
-<p lang="zh-TW">繁體中文，使用繁體中文標點與字形。</p>
-<p lang="zh-HK">香港繁體，使用港式字形。</p>
-<p lang="ja">日本語の句読点と字形。</p>
+<p lang="zh-CN">简体中文，使用简体中文标点。</p>
+<p lang="zh-TW">繁體中文，使用繁體中文標點。</p>
+<p lang="ja">日本語の句読点。</p>
 <p lang="ko">한국어 문장 부호.</p>
 <p lang="en">English punctuation and numerals: 1,234.56.</p>
 ```
 
-语言元数据只影响**标点形态**与**区域字形变体**——不会扩展文本覆盖范围。
+在当前 v1.2 稳定构建中，语言元数据影响**标点形态**，不会扩展文本覆盖范围。
 字体无法仅凭周围文字推断共享码点字符的语言；应用或文档必须把语言信息
 传递给排版引擎。
 
@@ -96,8 +119,7 @@ body {
 
 - 拉丁文本保留 Hanken Grotesk 特性：`liga`、`dlig`、`case`、`frac`、
   `ordn`、`sups`、`dnom`、`numr`、`ss01`–`ss03`、字距与语言专属 `locl`。
-- `locl` 驱动繁体中文、日文、韩文与港式中文的区域字形变体（v1.3.0），
-  以及经桥接层的区域标点。
+- `locl` 驱动经桥接层提供的区域标点。
 - 默认与 CJK 路径的 `U+2014` 使用煮豆派生的中文破折号；重复的 `——` 与
   `———` 经 `ccmp` 形成连续两格/三格破折号。
 - 明确的西文语言路径保持独立的 Hanken 破折号，不进行连续合成。
@@ -109,9 +131,8 @@ body {
 ## 构建与验证
 
 仓库包含完整构建管线、固定源哈希、结构审计、破折号矩阵与 HarfBuzz/RAQM
-直接回归。所有输入均来自不可变的上游发布：Hanken Grotesk 与 Noto Sans SC
-来自 Google Fonts 仓库固定提交，区域字形变体来自官方
-`googlefonts/noto-cjk` Sans2.004 TTF-VF。
+直接回归。Hanken Grotesk 与 Noto Sans SC 来自 Google Fonts 仓库固定提交；
+`Hanlink ?!` 使用固定哈希的 Inter 4.001 正体与斜体变量源。
 
 ```bash
 python scripts/fetch_sources.py
@@ -119,16 +140,25 @@ python scripts/build_static_reference.py
 HANLINK_ITALIC=1 python scripts/build_static_reference.py
 python scripts/build_variable_reference.py
 HANLINK_ITALIC=1 python scripts/build_variable_reference.py
+INTER_VF=sources/inter/InterVariable.ttf python scripts/build_interrobang.py
+HANLINK_ITALIC=1 INTER_VF=sources/inter/InterVariable-Italic.ttf python scripts/build_interrobang.py
+python scripts/build_variable_interrobang.py
+HANLINK_ITALIC=1 python scripts/build_variable_interrobang.py
 python scripts/audit_release.py fonts/static/*.ttf fonts/variable/*.ttf
 python scripts/check_dash_matrix.py fonts/static/*.ttf fonts/variable/*.ttf
-python scripts/check_han_locl_alignment.py
 python scripts/render_regression.py
 HANLINK_ITALIC_TEST=1 python scripts/render_regression.py
 ```
 
-区域字形管线从四地合一的 Noto Sans CJK 源提取 `locl` 映射（ZHT / JAN /
-KOR / ZHH），将变体字形复制进 Hanlink（共享轮廓去重），并为每个语言安装
-独立的 `locl` 特性（同时承载已有的桥接标点查找）。
+## v1.3 实验历史
+
+- **v1.3.0**：加入台湾、日本、韩国、香港的区域汉字 `locl` 变体；共读取
+  25,860 条映射，共享轮廓去重后新增 22,619 个字形。
+- **v1.3.1**：恢复 Hanken Grotesk 的 `T+h -> T_h` 等可选连字行为。
+- **v1.3.2**：加入 11,172 个谚文音节、兼容谚文字母与 Jamo 区块，并加入
+  `Hanlink ?!` 与 Th Grotesk 实验构建脚本。
+
+上述功能、标签和源码仍供研究与归档，但不属于当前稳定构建。
 
 合并策略、精确源版本与发布历史见 [BUILDING.md](BUILDING.md)、
 [SOURCES.md](SOURCES.md) 与 [FONTLOG.md](FONTLOG.md)。

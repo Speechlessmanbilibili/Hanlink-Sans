@@ -18,12 +18,6 @@ OUT=REPO; STATIC_OUT=OUT/'fonts/static'; WORK=Path(os.environ.get('HANLINK_STATI
 for p in [OUT,STATIC_OUT,WORK]: p.mkdir(parents=True,exist_ok=True)
 FAMILY='Hanlink Sans'; PS='HanlinkSans'
 WEIGHTS={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'}
-# CJK 区域字形变体：从四地合一 Noto CJK（sources/noto-cjk）提取 locl 变体，
-# 挂到对应语言系统（ZHT/JAN/KOR/ZHH）。用环境变量可关闭或自定义。
-VARIANTS_DIR=os.environ.get('HANLINK_CJK_VARIANTS_DIR', SRC/'noto-cjk'/'static')
-VARIANTS_LANGS=os.environ.get('HANLINK_CJK_VARIANTS_LANGS','ZHT ,JAN ,KOR ,ZHH ').split(',')
-if not VARIANTS_DIR or not os.path.isdir(VARIANTS_DIR):
-    VARIANTS_DIR=None
 # Synthetic italic: Hanken supplies true italic Latin designs; CJK (Noto SC and
 # the punctuation bridge) has no true italic, so it gets a uniform 10-degree
 # y-shear, the usual synthetic slant.
@@ -36,225 +30,7 @@ BFILES={w:BRIDGE/'fonts/static'/(f'CJKPunctBridge-Italic.ttf' if (ITALIC and w==
 # Stable unicode split from Regular
 b=TTFont(BFILES[400]); h=TTFont(HFILES[400]); n=TTFont(NFILES[400])
 BC=set(b.getBestCmap()); HALL=set(h.getBestCmap()); NALL=set(n.getBestCmap()); HC=HALL; NC=NALL
-# 谚文补全：GF 裁剪版 Noto Sans SC 不含谚文，从四地合一 Noto CJK 补
-# Hangul 音节/兼容字母/Jamo 码点（v1.3.2）
-HANGUL_CPS = set(range(0x1100, 0x1200)) | set(range(0x3130, 0x318F)) | set(range(0xA960, 0xA97D)) | set(range(0xAC00, 0xD7A4)) | set(range(0xD7B0, 0xD7FF))
-CJK_VF = SRC/'noto-cjk'/'static'/'NotoSansSC-Regular.ttf'
-if CJK_VF.exists():
-    cjk = TTFont(CJK_VF)
-    cjk_cm = cjk.getBestCmap()
-    HANGUL_PRESENT = sorted(HANGUL_CPS & set(cjk_cm))
-    NC |= set(HANGUL_PRESENT)
-    NALL |= set(HANGUL_PRESENT)
-    cjk.close()
-    print('谚文补全码点:', len(HANGUL_PRESENT), flush=True)
 b.close(); h.close(); n.close(); print('split',len(BC),len(HC),len(NC),flush=True)
-
-def copy_glyph(dst, src, sn, dn):
-    dst['glyf'][dn] = deepcopy(src['glyf'][sn])
-    dst['hmtx'].metrics[dn] = src['hmtx'].metrics[sn]
-    if 'vmtx' in dst:
-        if 'vmtx' in src and sn in src['vmtx'].metrics:
-            dst['vmtx'].metrics[dn] = src['vmtx'].metrics[sn]
-        else:
-            dst['vmtx'].metrics[dn] = (1000, 0)
-
-
-def install_hanken_dlig(font, hanken_vf_path):
-    """补回 Hanken 的 dlig 规则（T+h -> T_h 等）。
-
-    Hanken 静态实例被 instancer 裁剪掉了 dlig 字形，merge 时规则随之丢失；
-    这里从 Hanken 源 VF 读回规则与字形。T_h 是 composite（组件 T/h），
-    在 Hanlink 里重建时组件引用本字体的 T/h，粗细自动匹配各权重。
-    """
-    from fontTools.otlLib.builder import buildLookup, buildLigatureSubstSubtable
-    hf = TTFont(hanken_vf_path)
-    font_order = list(font.getGlyphOrder())
-    rules = {}
-    need_glyphs = set()
-    if 'GSUB' in hf:
-        gsub = hf['GSUB'].table
-        for fr in gsub.FeatureList.FeatureRecord:
-            if fr.FeatureTag != 'dlig':
-                continue
-            for li in fr.Feature.LookupListIndex:
-                lk = gsub.LookupList.Lookup[li]
-                for st in lk.SubTable:
-                    typ = lk.LookupType
-                    if typ == 7:
-                        typ = st.ExtensionLookupType
-                        st = st.ExtSubTable
-                    if typ == 4 and hasattr(st, 'ligatures'):
-                        for first, ligs in st.ligatures.items():
-                            for lig in ligs:
-                                seq = (first,) + tuple(lig.Component)
-                                rules[seq] = lig.LigGlyph
-                                need_glyphs.add(lig.LigGlyph)
-    copied = 0
-    for gn in need_glyphs:
-        if gn in font_order or gn not in hf['glyf']:
-            continue
-        g = hf['glyf'][gn]
-        if g.numberOfContours < 0:
-            if not all(c.glyphName in font_order for c in g.components):
-                continue
-        font['glyf'][gn] = deepcopy(g)
-        font['hmtx'].metrics[gn] = hf['hmtx'].metrics[gn]
-        if 'vmtx' in font:
-            font['vmtx'].metrics[gn] = (1000, 0)
-        font_order.append(gn)
-        copied += 1
-    font.setGlyphOrder(font_order)
-    hf.close()
-    if not rules:
-        return
-    valid = {seq: t for seq, t in rules.items()
-             if all(s in font_order for s in seq) and t in font_order}
-    if not valid:
-        return
-    st = buildLigatureSubstSubtable(valid)
-    lk = buildLookup([st], table='GSUB')
-    gsub = font['GSUB'].table
-    gsub.LookupList.Lookup.append(lk)
-    gsub.LookupList.LookupCount = len(gsub.LookupList.Lookup)
-    new_li = len(gsub.LookupList.Lookup) - 1
-    for fr in gsub.FeatureList.FeatureRecord:
-        if fr.FeatureTag == 'dlig':
-            fr.Feature.LookupListIndex.append(new_li)
-            fr.Feature.LookupCount = len(fr.Feature.LookupListIndex)
-    print('installed hanken dlig:', len(valid), 'rules,', copied, 'glyphs', flush=True)
-
-
-def install_cjk_variants(font, variants_path, lang_tags):
-    """实验：从四地合一 Noto CJK 提取 locl 变体字形挂到目标语言系统。
-
-    Noto CJK 的 hani 语言系统（ZHT/JAN/KOR…）自带完整 locl 映射（码点 →
-    区域变体字形）。这里按码点对齐：把变体字形 copy 进 Hanlink（新名
-    ``<源字形>.cjk<语言>``），并在对应语言系统挂一个 locl 单替换。
-    """
-    from fontTools.otlLib.builder import buildLookup, buildSingleSubstSubtable
-    from fontTools.ttLib.tables import otTables
-    vf = TTFont(variants_path)
-    vcmap = vf.getBestCmap()
-    vrev = {g: cp for cp, g in vcmap.items()}
-    vgsub = vf['GSUB'].table
-    font_cmap = font.getBestCmap()
-    font_order = list(font.getGlyphOrder())
-
-    def locl_maps(lang):
-        out = {}
-        for sr in vgsub.ScriptList.ScriptRecord:
-            if sr.ScriptTag != 'hani':
-                continue
-            for lr in sr.Script.LangSysRecord:
-                if lr.LangSysTag != lang:
-                    continue
-                for fi in lr.LangSys.FeatureIndex:
-                    fr = vgsub.FeatureList.FeatureRecord[fi]
-                    if fr.FeatureTag != 'locl':
-                        continue
-                    for li in fr.Feature.LookupListIndex:
-                        lk = vgsub.LookupList.Lookup[li]
-                        for st in lk.SubTable:
-                            typ = lk.LookupType
-                            if typ == 7:
-                                typ = st.ExtensionLookupType
-                                st = st.ExtSubTable
-                            if typ == 1 and hasattr(st, 'mapping'):
-                                out.update(st.mapping)
-        return out
-
-    total = 0
-    installed_targets = {}  # cp -> (Noto 目标字形, 已安装的 new_name)，跨语言差集
-    for lang in lang_tags:
-        mapping = locl_maps(lang)
-        new_mapping = {}
-        for src_glyph, dst_glyph in mapping.items():
-            cp = vrev.get(src_glyph)
-            if cp is None or cp not in font_cmap:
-                continue
-            target = font_cmap[cp]
-            prev = installed_targets.get(cp)
-            if prev is not None and prev[0] == dst_glyph:
-                # 差集：该码点已安装同一目标字形（如 ZHH 与 ZHT 同形、
-                # 日韩同形）。省字形，但映射必须照加，指向已装的那个。
-                new_mapping[target] = prev[1]
-                continue
-            new_name = f'{target}.cjk{lang.strip()}'
-            if new_name in font_order or dst_glyph not in vf['glyf']:
-                continue
-            copy_glyph(font, vf, dst_glyph, new_name)
-            if ITALIC:
-                # 变体字形在 merge 后 copy，绕过了源剪切；斜体构建时补斜切
-                g = font['glyf'][new_name]
-                if g.numberOfContours > 0:
-                    coords = g.coordinates
-                    for i, (x, y) in enumerate(coords):
-                        coords[i] = (x + y * SLANT, y)
-                g.recalcBounds(font['glyf'])
-                adv = font['hmtx'].metrics[new_name][0]
-                font['hmtx'].metrics[new_name] = (adv, getattr(g, 'xMin', 0))
-            font_order.append(new_name)
-            installed_targets[cp] = (dst_glyph, new_name)
-            new_mapping[target] = new_name
-            total += 1
-        if not new_mapping:
-            print('no variants for', lang, flush=True)
-            continue
-        # 每个语言新建独立的 locl feature：标点 lookups + 变体 lookup，
-        # 替换该 LangSys 的旧 locl 引用。不能直接 update 共享 mapping
-        # （merge 后多语言可能共享同一 lookup，会互相覆盖），也不能在
-        # 同一 LangSys 里留两个 locl（HarfBuzz 只执行第一个）。
-        from fontTools.otlLib.builder import buildLookup, buildSingleSubstSubtable
-        from fontTools.ttLib.tables import otTables
-        g = font['GSUB'].table
-        old_lookups = []
-        for sr in g.ScriptList.ScriptRecord:
-            if sr.ScriptTag != 'hani':
-                continue
-            for lr in sr.Script.LangSysRecord:
-                if lr.LangSysTag != lang:
-                    continue
-                for fi in lr.LangSys.FeatureIndex:
-                    fr = g.FeatureList.FeatureRecord[fi]
-                    if fr.FeatureTag == 'locl':
-                        old_lookups.extend(fr.Feature.LookupListIndex)
-                lr.LangSys.FeatureIndex = [
-                    i for i in lr.LangSys.FeatureIndex
-                    if g.FeatureList.FeatureRecord[i].FeatureTag != 'locl'
-                ]
-                lr.LangSys.FeatureCount = len(lr.LangSys.FeatureIndex)
-        st = buildSingleSubstSubtable(new_mapping)
-        lk = buildLookup([st], table='GSUB')
-        g.LookupList.Lookup.append(lk)
-        g.LookupList.LookupCount = len(g.LookupList.Lookup)
-        new_li = len(g.LookupList.Lookup) - 1
-        fr = otTables.FeatureRecord()
-        fr.FeatureTag = 'locl'
-        feat = otTables.Feature()
-        feat.FeatureParams = None
-        feat.LookupListIndex = old_lookups + [new_li]
-        feat.LookupCount = len(feat.LookupListIndex)
-        fr.Feature = feat
-        g.FeatureList.FeatureRecord.append(fr)
-        g.FeatureList.FeatureCount = len(g.FeatureList.FeatureRecord)
-        new_fi = len(g.FeatureList.FeatureRecord) - 1
-        for sr in g.ScriptList.ScriptRecord:
-            if sr.ScriptTag != 'hani':
-                continue
-            for lr in sr.Script.LangSysRecord:
-                if lr.LangSysTag == lang:
-                    lr.LangSys.FeatureIndex.append(new_fi)
-                    lr.LangSys.FeatureIndex.sort()
-                    lr.LangSys.FeatureCount = len(lr.LangSys.FeatureIndex)
-        print('installed', lang, len(new_mapping), 'variants', flush=True)
-    font.setGlyphOrder(font_order)
-    # 新增的 locl FeatureRecord 打乱了排序，audit 要求按 tag 排序
-    from layout_compat import _sort_feature_records
-    _sort_feature_records(font['GSUB'].table)
-    vf.close()
-    return total
-
 
 def shear_font(font, slant=SLANT, slant_deg=SLANT_DEG):
     """Synthetic italic: y-shear every outline so x' = x + y*slant.
@@ -311,14 +87,14 @@ def set_names(f,w,style,italic=False):
         legacy_sub=sub
         full=FAMILY if w==400 else f'{FAMILY} {style}'
         unique=f'{PS}-{style}'
-    vals={**project_names(unique),1:legacy_family,2:sub,4:full,
+    vals={**project_names(unique),1:legacy_family,2:legacy_sub,4:full,
           6:unique,16:FAMILY,17:(sub if italic else style),25:PS}
     for k,v in vals.items(): setname(nt,k,v)
     apply_binary_metadata(f)
     o=f['OS/2']; o.usWeightClass=w; fs=o.fsSelection
     for bit in (0,5,6,9): fs &= ~(1<<bit)
     if italic: fs|=1<<0
-    if w==400: fs|=1<<6
+    if w==400 and not italic: fs|=1<<6
     if w==700: fs|=1<<5
     o.fsSelection=fs; f['head'].macStyle &= ~3
     if w==700: f['head'].macStyle |= 1
@@ -375,32 +151,6 @@ def build(w,style):
     hsaved=TTFont(hp,lazy=True); hanken_saved_order=list(hsaved.getGlyphOrder()); hsaved.close()
     hanken_orig_to_saved=dict(zip(hanken_pre_order,hanken_saved_order))
     nf=subset_font(TTFont(NFILES[w]),NC); noto_pre_order=list(nf.getGlyphOrder()); remove_cmap_codepoints(nf,BC|HALL); drop_unmergeable_base_varstore(nf)
-    if HANGUL_PRESENT:
-        # 谚文字形：GF 版没有，从四地合一 Noto CJK 的**对应权重**静态拷贝
-        cjk=TTFont(SRC/'noto-cjk'/'static'/f'NotoSansSC-{style}.ttf')
-        cjk_cm=cjk.getBestCmap(); nf_cm=nf.getBestCmap(); order_nf=list(nf.getGlyphOrder())
-        added=0
-        for cp in HANGUL_PRESENT:
-            if cp in nf_cm: continue
-            gn=cjk_cm.get(cp)
-            if gn is None or gn not in cjk['glyf']: continue
-            from copy import deepcopy
-            nf['glyf'][gn]=deepcopy(cjk['glyf'][gn])
-            nf['hmtx'].metrics[gn]=cjk['hmtx'].metrics[gn]
-            if 'vmtx' in nf:
-                nf['vmtx'].metrics[gn]=(1000,0)
-            if gn not in order_nf:
-                order_nf.append(gn)
-            nf_cm[cp]=gn
-            added+=1
-        nf.setGlyphOrder(order_nf)
-        nf['glyf'].glyphOrder=order_nf
-        for table in nf['cmap'].tables:
-            if hasattr(table,'cmap'):
-                for cp in HANGUL_PRESENT:
-                    if cp in nf_cm: table.cmap[cp]=nf_cm[cp]
-        cjk.close()
-        print('谚文补全字形:',added,flush=True)
     if ITALIC:
         shear_font(nf)
     nf.save(np); nf.close()
@@ -422,15 +172,6 @@ def build(w,style):
     }
     m=Merger().merge([str(x) for x in source_paths])
     no=TTFont(NFILES[w]); hs=TTFont(HFILES[w]); fix_hanlink_language_systems(m,hanken_hidden,hs,no,noto_glyph_map,HALL-BC,BC)
-    if VARIANTS_DIR:
-        vp=Path(VARIANTS_DIR)/'NotoSansSC-Regular.ttf'
-        if vp.exists():
-            install_cjk_variants(m, vp, VARIANTS_LANGS)
-        else:
-            print('WARN 变体源缺失:', vp, flush=True)
-    hanken_vf = SRC/'hanken'/(f'HankenGrotesk-Italic-VariableFont_wght.ttf' if ITALIC else f'HankenGrotesk-VariableFont_wght.ttf')
-    if hanken_vf.exists():
-        install_hanken_dlig(m, hanken_vf)
     if 'prep' in hs:
         m['prep']=deepcopy(hs['prep'])
     use_noto_metrics(m,no); set_names(m,w,style,italic=ITALIC)
@@ -448,6 +189,6 @@ orders=[]
 for p in paths:
     f=TTFont(p,lazy=True); orders.append(f.getGlyphOrder()); f.close()
 assert all(o==orders[0] for o in orders[1:]),'glyph orders differ'
-reg_path=STATIC_OUT/f'{PS}-Regular.ttf'
+reg_path=STATIC_OUT/(f'{PS}-Italic.ttf' if ITALIC else f'{PS}-Regular.ttf')
 if reg_path.exists():
     reg=TTFont(reg_path); cm=reg.getBestCmap(); tags=sorted(set(r.FeatureTag for r in reg['GSUB'].table.FeatureList.FeatureRecord)); print('validate static',len(reg.getGlyphOrder()),len(cm),'vhea' in reg,'vmtx' in reg,len(reg['vmtx'].metrics),tags,flush=True); reg.close()

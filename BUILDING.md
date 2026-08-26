@@ -2,6 +2,14 @@
 
 Hanlink Sans is built from three OFL-licensed upstream font families. Noto Sans SC and Hanken Grotesk are taken exclusively from pinned **Google Fonts repository distributions**, never author-repository, system, or mirror builds. Exact revisions and hashes are recorded in `SOURCES.md`.
 
+## Active release scope
+
+The active and recommended build is **1.210 / v1.2.1**. The v1.3.x regional
+ideograph and full-Hangul experiments remain in Git history, but they are not
+part of the stable build because their variable-font volume triggers incorrect
+Bold rendering in Microsoft Office through Windows GDI. The stable pipeline
+therefore uses the v1.2 Noto Sans SC coverage and regional punctuation layer.
+
 ## 1. Fetch Google Fonts inputs
 
 ```bash
@@ -10,7 +18,7 @@ python scripts/fetch_sources.py
 
 This downloads the pinned Google Fonts variable TTFs into gitignored `sources/`, verifies SHA-256, and generates all nine static source instances locally.
 
-Build CJK Punct Bridge v1.2.0 in a sibling `CJK-Punct-Bridge` directory, or set `HANLINK_BRIDGE_DIR` to that checkout.
+Build CJK Punct Bridge v1.3.2 in a sibling `CJK-Punct-Bridge` directory, or set `HANLINK_BRIDGE_DIR` to that checkout.
 
 ## 2. Build and verify
 
@@ -29,27 +37,6 @@ The italic family is a separate build pass: set `HANLINK_ITALIC=1` for
 checkout must have been built with `CJK_PUNCT_ITALIC=1` first so its italic
 static faces exist. Regression scripts accept `HANLINK_ITALIC_TEST=1` to
 compare the italic Latin against the Hanken Grotesk Italic source.
-
-## Regional glyph variants
-
-Since v1.3.0 the build extracts regional glyph variants from the pinned
-four-in-one Noto CJK TTF-VF (`sources/noto-cjk`, see `SOURCES.md`) by default:
-
-- For each of ZHT / JAN / KOR / ZHH, the `locl` mappings of the Noto CJK
-  `hani` language systems are read and the variant glyphs are copied into
-  Hanlink with `sources/noto-cjk/static` as the variant source.
-- Identical regional outlines are deduplicated across languages (e.g.
-  Japan/Korea or Hong Kong/Taiwan same-shape variants share one glyph).
-- Each language gets its **own** `locl` feature carrying the existing bridge
-  punctuation lookups plus the new variant lookup — a second `locl` feature
-  in the same LangSys would be ignored by HarfBuzz, and merge-shared lookups
-  would overwrite each other.
-- Italic builds apply the synthetic shear to the copied variant glyphs too.
-
-Set `HANLINK_CJK_VARIANTS_DIR` (default `sources/noto-cjk/static`) to change
-the variant source, `HANLINK_CJK_VARIANTS_LANGS` (default
-`ZHT ,JAN ,KOR ,ZHH `) to change the regions, or point
-`HANLINK_CJK_VARIANTS_DIR` at a non-existent directory to disable variants.
 
 ## Inputs
 
@@ -93,6 +80,31 @@ faces (`HANLINK_ITALIC=1`), producing `HanlinkSans-Italic-Variable.ttf` with a
 variable files sharing the typographic family name **Hanlink Sans**, exactly
 like the pinned Hanken Grotesk release (`HankenGrotesk[wght].ttf` +
 `HankenGrotesk-Italic[wght].ttf`).
+
+## Hanlink ?! variant
+
+Place the hash-pinned Inter 4.001 files recorded in `SOURCES.md` under
+`sources/inter/`, or set `INTER_VF` explicitly for each pass. Build `Hanlink
+?!` only after all eighteen v1.2.1 Hanlink static faces exist:
+
+```bash
+INTER_VF=sources/inter/InterVariable.ttf python scripts/build_interrobang.py
+HANLINK_ITALIC=1 INTER_VF=sources/inter/InterVariable-Italic.ttf python scripts/build_interrobang.py
+python scripts/build_variable_interrobang.py
+HANLINK_ITALIC=1 python scripts/build_variable_interrobang.py
+```
+
+For every static weight, `build_interrobang.py` instantiates both Inter's
+`U+203D` and Hanken Grotesk's `T_h` at the requested `wght`; italic builds use
+the true Inter and Hanken italic sources. Reusing the default 400 outline for
+every master is forbidden because Inter's `U+203D` coordinates, bounds, and
+advance width all vary across the weight axis.
+
+The variable build verifies the `wght` axis and nine named instances, compares
+100/400/900 instances with their static masters, requires distinct `U+203D`
+outlines across the weight range, rejects 60,000 or more glyphs, and rejects a
+`gvar` table at or above 64 MiB. The last two checks are explicit Windows
+Office/GDI compatibility guards derived from the withdrawn v1.3.x builds.
 
 ## OpenType behavior
 

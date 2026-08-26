@@ -15,6 +15,8 @@ from fontTools.otlLib.builder import buildStatTable
 from fontTools.ttLib import TTFont
 from fontTools.varLib import build as varlib_build
 from fontTools.varLib.instancer import instantiateVariableFont
+from font_metadata import apply_binary_metadata, project_names
+from build_interrobang import INTER_LEGAL
 
 REPO = Path(__file__).resolve().parents[1]
 STATIC = REPO / "fonts-interrobang" / "static"
@@ -31,6 +33,8 @@ WEIGHTS = {
     500: "Medium", 600: "SemiBold", 700: "Bold", 800: "ExtraBold",
     900: "Black",
 }
+MAX_GLYPHS = 60_000
+MAX_GVAR_BYTES = 64 * 1024 * 1024
 
 
 def setname(table, name_id, value):
@@ -46,17 +50,22 @@ def setname(table, name_id, value):
 def set_names(font):
     names = font["name"]
     sub = "Italic" if ITALIC else "Regular"
+    unique = f"{PS}-Italic-VF" if ITALIC else f"{PS}-VF"
     values = {
+        **project_names(unique),
+        **INTER_LEGAL,
         1: FAMILY, 2: sub, 4: FAMILY + (f" {sub}" if ITALIC else ""),
         6: f"{PS}{'-Italic' if ITALIC else ''}", 16: FAMILY, 17: sub, 25: PS,
     }
     for nid, val in values.items():
         setname(names, nid, val)
+    apply_binary_metadata(font)
     os2 = font["OS/2"]
     os2.usWeightClass = 400
     for bit in (0, 5, 6, 9):
         os2.fsSelection &= ~(1 << bit)
-    os2.fsSelection |= 1 << 6
+    if not ITALIC:
+        os2.fsSelection |= 1 << 6
     if ITALIC:
         os2.fsSelection |= 1 << 0
     font["head"].macStyle &= ~3
@@ -69,6 +78,80 @@ def style_names():
         ("Italic" if (ITALIC and weight == 400) else style + (" Italic" if ITALIC else ""))
         for weight, style in WEIGHTS.items()
     ]
+
+
+def glyph_signature(font, glyph_name):
+    glyph = font["glyf"][glyph_name]
+    coords, end_points, flags = glyph.getCoordinates(font["glyf"])
+    return (
+        tuple(coords), tuple(end_points), bytes(flags),
+        font["hmtx"].metrics[glyph_name],
+    )
+
+
+def interrobang_targets(font):
+    cmap = font.getBestCmap()
+    pairs = ((cmap[0x003F], cmap[0x0021]), (cmap[0xFF1F], cmap[0xFF01]))
+    targets = []
+    for first, second in pairs:
+        target = None
+        for lookup in reversed(font["GSUB"].table.LookupList.Lookup):
+            for subtable in lookup.SubTable:
+                lookup_type = lookup.LookupType
+                if lookup_type == 7:
+                    lookup_type = subtable.ExtensionLookupType
+                    subtable = subtable.ExtSubTable
+                if lookup_type != 4 or not hasattr(subtable, "ligatures"):
+                    continue
+                for ligature in subtable.ligatures.get(first, []):
+                    if ligature.Component == [second]:
+                        target = ligature.LigGlyph
+                        break
+                if target is not None:
+                    break
+            if target is not None:
+                break
+        if target is None:
+            raise AssertionError((first, second, "missing interrobang ligature"))
+        targets.append(target)
+    return tuple(targets)
+
+
+def validate_output(output, paths):
+    variable = TTFont(output)
+    axis = next(item for item in variable["fvar"].axes if item.axisTag == "wght")
+    assert (axis.minValue, axis.defaultValue, axis.maxValue) == (100.0, 400.0, 900.0)
+    assert len(variable["fvar"].instances) == 9
+    glyph_count = variable["maxp"].numGlyphs
+    gvar_bytes = variable.reader.tables["gvar"].length
+    assert glyph_count < MAX_GLYPHS, ("Office/GDI glyph guard", glyph_count, MAX_GLYPHS)
+    assert gvar_bytes < MAX_GVAR_BYTES, ("Office/GDI gvar guard", gvar_bytes, MAX_GVAR_BYTES)
+
+    outline_signatures = []
+    for weight in WEIGHTS:
+        static = TTFont(paths[weight])
+        half_static, full_static = interrobang_targets(static)
+        outline_signatures.append(glyph_signature(static, half_static))
+        if weight in (100, 400, 900):
+            instance = instantiateVariableFont(
+                variable, {"wght": weight}, inplace=False, optimize=True, static=True
+            )
+            half_instance, full_instance = interrobang_targets(instance)
+            for variable_name, static_name in (
+                (half_instance, half_static), (full_instance, full_static),
+            ):
+                assert glyph_signature(instance, variable_name) == glyph_signature(static, static_name), (
+                    weight, variable_name, "variable/static interrobang mismatch"
+                )
+            instance.close()
+        static.close()
+    assert len(set(outline_signatures)) == len(WEIGHTS), "Inter U+203D outline does not vary by weight"
+    variable.close()
+    print(
+        f"validated 9 distinct interrobang weights; glyphs={glyph_count}; "
+        f"gvar={gvar_bytes} bytes",
+        flush=True,
+    )
 
 
 def main():
@@ -120,7 +203,7 @@ def main():
 
     variable, _, _ = varlib_build(str(dsp), exclude=["BASE", "GDEF", "GPOS", "GSUB"])
     reg = TTFont(paths[400])
-    for tag in ("GDEF", "GPOS", "GSUB"):
+    for tag in ("GDEF", "GPOS", "GSUB", "prep"):
         if tag in reg:
             table = deepcopy(reg[tag])
             if hasattr(table, "VarStore") and table.VarStore is not None:
@@ -147,6 +230,7 @@ def main():
     variable.save(output, reorderTables=True)
     variable.close()
     print("saved", output, output.stat().st_size / 1048576, "MiB", flush=True)
+    validate_output(output, paths)
 
 
 if __name__ == "__main__":

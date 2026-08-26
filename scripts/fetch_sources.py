@@ -1,7 +1,6 @@
 from pathlib import Path
 import hashlib
 import urllib.request
-import zipfile
 
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
@@ -13,11 +12,6 @@ WEIGHTS = {
     500: "Medium", 600: "SemiBold", 700: "Bold", 800: "ExtraBold",
     900: "Black",
 }
-NOTO_CJK_ZIP = (
-    "https://github.com/googlefonts/noto-cjk/releases/download/Sans2.004/"
-    "02_NotoSansCJK-TTF-VF.zip",
-    "b73a1f90988d6ccc3f60ce44ee3d1e82479a92710cd49cd950950c9adab50f1e",
-)
 INPUTS = {
     "hanken/HankenGrotesk-VariableFont_wght.ttf": (
         "https://raw.githubusercontent.com/google/fonts/714891563e901b1a0d8ebcaaa003b01604793888/"
@@ -64,34 +58,5 @@ for relative, (url, expected, family, italic) in INPUTS.items():
         instance.save(output, reorderTables=True)
         instance.close()
     variable.close()
-
-# Noto CJK 四地合一 TTF-VF（区域字形变体源）：Sans2.004 官方发布。
-zip_path = SOURCES / "noto-cjk" / "NotoSansCJK-TTF-VF.zip"
-zip_path.parent.mkdir(parents=True, exist_ok=True)
-if not zip_path.exists():
-    print("download NotoSansCJK-TTF-VF.zip", flush=True)
-    urllib.request.urlretrieve(NOTO_CJK_ZIP[0], zip_path)
-actual = hashlib.sha256(zip_path.read_bytes()).hexdigest()
-if actual != NOTO_CJK_ZIP[1]:
-    raise SystemExit(f"NotoSansCJK-TTF-VF.zip: SHA-256 mismatch: {actual}")
-print("ok NotoSansCJK-TTF-VF.zip", actual)
-
-cjk_vf = SOURCES / "noto-cjk" / "Variable" / "TTF" / "NotoSansCJKsc-VF.ttf"
-if not cjk_vf.exists():
-    with zipfile.ZipFile(zip_path) as z:
-        z.extract("Variable/TTF/NotoSansCJKsc-VF.ttf", zip_path.parent)
-cjk_static = SOURCES / "noto-cjk" / "static"
-cjk_static.mkdir(exist_ok=True)
-if not list(cjk_static.glob("*.ttf")):
-    variable = TTFont(cjk_vf)
-    for weight, style in WEIGHTS.items():
-        output = cjk_static / f"NotoSansSC-{style}.ttf"
-        instance = instantiateVariableFont(
-            variable, {"wght": weight}, inplace=False, optimize=True, static=True
-        )
-        instance.save(output, reorderTables=True)
-        instance.close()
-    variable.close()
-print("Noto CJK sources ready:", cjk_static)
 
 print("Google Fonts sources ready:", SOURCES)

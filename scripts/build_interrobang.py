@@ -1,32 +1,36 @@
 #!/usr/bin/env python3
 """Hanlink ?! —— Hanlink Sans 的 interrobang 连字变体构建。
 
-从审计过的 Hanlink Sans 静态字体出发（输入：HANLINK_STATIC_DIR，默认
-../hanlink-sans/fonts/static 或 ../CJK-Punct-Bridge 同级），在每权重：
+从审计过的 Hanlink Sans v1.2 静态字体出发（输入：HANLINK_STATIC_DIR，默认
+fonts/static），在每权重：
 1. 合成 ?! -> ‽（半角，经典叠加）与 ？！-> 全宽 ‽
-2. 拷贝 Hanken 的 T_h（src/hanken/static）并挂 T+h -> T_h 到 liga（默认开启）
+2. 从 Hanken VF 的相同字重提取 T_h，并挂 T+h -> T_h 到 liga（默认开启）
 3. ?!/？！ 连字也挂 liga
 4. 设置家族名 Hanlink ?! / PS HanlinkSansInterrobang / 斜体样式位
 5. 输出 fonts/static/HanlinkSansInterrobang-{Style}.ttf，
-   HANLINK_ITALIC=1 时生成 *Italic.ttf（新字形补 10° 斜切）
+   HANLINK_ITALIC=1 时从真实斜体源生成 *Italic.ttf
 
 可变字体由 build_variable_interrobang.py 从这 9 个静态 master 构建。
 """
 from array import array
 from copy import deepcopy
 from pathlib import Path
+from hashlib import sha256
 import os
-import math
-import sys
-from fontTools.ttLib import TTFont, newTable
+from fontTools.misc.roundTools import otRound
+from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables import ttProgram
 from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphCoordinates
 from fontTools.otlLib.builder import buildLookup, buildLigatureSubstSubtable
 from fontTools.otlLib.builder import buildStatTable
+from fontTools.varLib.instancer import instantiateVariableFont
+from font_metadata import (
+    COPYRIGHT, DESIGNER, TRADEMARK, apply_binary_metadata, project_names,
+)
 
 REPO = Path(__file__).resolve().parents[1]
-STATIC_IN = Path(os.environ.get("HANLINK_STATIC_DIR", REPO.parent / "hanlink-sans" / "fonts" / "static"))
-HANKEN_VF = Path(os.environ.get("HANKEN_VF_DIR", REPO.parent / "hanlink-sans" / "sources" / "hanken"))
+STATIC_IN = Path(os.environ.get("HANLINK_STATIC_DIR", REPO / "fonts" / "static"))
+HANKEN_VF = Path(os.environ.get("HANKEN_VF_DIR", REPO / "sources" / "hanken"))
 OUT = REPO / "fonts-interrobang" / "static"
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -38,31 +42,22 @@ WEIGHTS = {
     900: "Black",
 }
 ITALIC = os.environ.get("HANLINK_ITALIC") == "1"
-SLANT_DEG = 10.0
-SLANT = math.tan(math.radians(SLANT_DEG))
-# 现成 ‽ 字形源：Inter 的 U+203D（interrobang），提取后按 UPM 缩放。
-INTER_VF = Path(os.environ.get("INTER_VF", REPO.parent / "interrobang-sources" / "inter-var.ttf"))
-
-COPYRIGHT = (
-    "Portions Copyright 2021 The Hanken Grotesk Project Authors. "
-    "Portions Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'. "
-    "Portions Copyright 2015 Google Inc. "
-    "Portions Copyright 2022 Buernia, with Reserved Font Names 'Zhudou' and '煮豆'. "
-    "Modifications copyright 2026 SilentPerson (Speechlessmanbilibili)."
+INTER_DEFAULT = REPO / "sources" / "inter" / (
+    "InterVariable-Italic.ttf" if ITALIC else "InterVariable.ttf"
 )
-LEGAL = {
-    0: COPYRIGHT,
-    7: "Source is a trademark of Adobe in the United States and/or other countries.",
-    8: "SilentPerson (Speechlessmanbilibili)",
-    9: "SilentPerson (font engineering and integration) with Hanlink Sans contributors",
+INTER_VF = Path(os.environ.get("INTER_VF", INTER_DEFAULT))
+INTER_SHA256 = {
+    False: "4989b125924991b90d05b2d16e0e388c48f7d5bb8b30539bbf9c755278d0ccaf",
+    True: "d6f1f6a172d9e588438db9f986fd5cfad7b30f644374080a8a9d4d91e344586f",
+}
+INTER_LEGAL = {
+    0: COPYRIGHT + " Portions Copyright 2016 The Inter Project Authors.",
+    7: TRADEMARK + " Inter UI and Inter is a trademark of rsms.",
+    9: DESIGNER + "; Rasmus Andersson (Inter).",
     10: "Hanlink ?! is a ligature variant of Hanlink Sans. "
         "Question mark + exclamation mark form an interrobang (U+203D and a full-width form); "
         "T+h forms the optional Th ligature, enabled by default.",
-    11: "https://github.com/Speechlessmanbilibili/Hanlink-Interrobang",
-    12: "https://github.com/Speechlessmanbilibili",
-    13: "This Font Software is licensed under the SIL Open Font License, Version 1.1. "
-        "See the bundled OFL.txt and THIRD_PARTY_NOTICES.md for full terms and attribution.",
-    14: "https://openfontlicense.org",
+    11: "https://github.com/Speechlessmanbilibili/Hanlink-Sans",
 }
 
 
@@ -92,21 +87,21 @@ def set_names(font, weight, style):
         legacy_sub = sub
         full = FAMILY if weight == 400 else f"{FAMILY} {style}"
         unique = f"{PS}-{style}"
-    vals = {**LEGAL,
-            1: legacy_family, 2: sub, 3: f"1.000;SilentPerson;{unique}",
-            4: full, 5: "Version 1.000", 6: unique,
+    vals = {**project_names(unique), **INTER_LEGAL,
+            1: legacy_family, 2: legacy_sub,
+            4: full, 6: unique,
             16: FAMILY, 17: (sub if italic else style), 25: PS}
     for k, v in vals.items():
         setname(font, k, v)
     o = font["OS/2"]
     o.usWeightClass = weight
-    o.achVendID = "    "
+    apply_binary_metadata(font)
     fs = o.fsSelection
     for bit in (0, 5, 6, 9):
         fs &= ~(1 << bit)
     if italic:
         fs |= 1 << 0
-    if weight == 400:
+    if weight == 400 and not italic:
         fs |= 1 << 6
     if weight == 700:
         fs |= 1 << 5
@@ -116,24 +111,44 @@ def set_names(font, weight, style):
         font["head"].macStyle |= 1
     if italic:
         font["head"].macStyle |= 2
-    font["head"].fontRevision = 1.0
 
 
-def import_interrobang(font):
+def validate_inter_source():
+    if not INTER_VF.exists():
+        raise SystemExit(f"缺少 Inter 源（U+203D 字形）: {INTER_VF}，请设置 INTER_VF")
+    digest = sha256(INTER_VF.read_bytes()).hexdigest()
+    if digest != INTER_SHA256[ITALIC]:
+        raise SystemExit(
+            f"Inter 源 SHA-256 不匹配: {digest}\n期望: {INTER_SHA256[ITALIC]}\n{INTER_VF}"
+        )
+    source = TTFont(INTER_VF, lazy=True)
+    axes = {axis.axisTag: (axis.minValue, axis.defaultValue, axis.maxValue)
+            for axis in source["fvar"].axes}
+    if axes.get("wght") != (100.0, 400.0, 900.0) or "opsz" not in axes:
+        raise SystemExit(f"Inter 源轴不符合预期: {axes}")
+    if 0x203D not in source.getBestCmap():
+        raise SystemExit("Inter 源没有 U+203D 字形")
+    source.close()
+    print(f"verified Inter source {INTER_VF.name} {digest}", flush=True)
+
+
+def import_interrobang(font, weight):
     """从 Inter 提取 U+203D 字形（半宽）与全宽版（同轮廓，advance 1000 靠左）。
 
     全宽与半宽只差两侧留白，字形轮廓相同；全宽按中文全角惯例靠左，
     右侧留白。直接提取源字形坐标并缩放，不经过 pen（避免懒加载污染）。
     """
-    if not INTER_VF.exists():
-        raise SystemExit(f"缺少 Inter 源（U+203D 字形）: {INTER_VF}，请设置 INTER_VF")
-    src = TTFont(INTER_VF)
-    if "uni203D" not in src["glyf"]:
-        raise SystemExit("Inter 源没有 U+203D 字形")
+    variable = TTFont(INTER_VF)
+    src = instantiateVariableFont(
+        variable, {"opsz": 14, "wght": weight},
+        inplace=False, optimize=True, static=True,
+    )
+    variable.close()
+    glyph_name = src.getBestCmap()[0x203D]
     scale = 1000 / src["head"].unitsPerEm
-    g = src["glyf"]["uni203D"]
+    g = src["glyf"][glyph_name]
     coords, endpts, flags = g.getCoordinates(src["glyf"])
-    new_coords = [(x * scale, y * scale) for x, y in coords]
+    new_coords = [(otRound(x * scale), otRound(y * scale)) for x, y in coords]
     new = Glyph()
     new.numberOfContours = g.numberOfContours
     new.coordinates = GlyphCoordinates(new_coords)
@@ -141,7 +156,7 @@ def import_interrobang(font):
     new.flags = array("B", flags)
     new.program = ttProgram.Program()
     new.recalcBounds(font["glyf"])
-    adv_half = int(src["hmtx"].metrics["uni203D"][0] * scale)
+    adv_half = otRound(src["hmtx"].metrics[glyph_name][0] * scale)
     xmin = getattr(new, "xMin", 0)
     font["glyf"]["interrobang.uni203D"] = new
     font["hmtx"].metrics["interrobang.uni203D"] = (adv_half, xmin)
@@ -154,15 +169,24 @@ def import_interrobang(font):
     return ["interrobang.uni203D", "interrobang.full"]
 
 
-def shear_glyph(font, name):
-    g = font["glyf"][name]
-    if g.numberOfContours > 0:
-        coords = g.coordinates
-        for i, (x, y) in enumerate(coords):
-            coords[i] = (x + y * SLANT, y)
-    g.recalcBounds(font["glyf"])
-    adv = font["hmtx"].metrics[name][0]
-    font["hmtx"].metrics[name] = (adv, getattr(g, "xMin", 0))
+def import_hanken_ligature(font, source, glyph_name):
+    glyph = source["glyf"][glyph_name]
+    coords, end_points, flags = glyph.getCoordinates(source["glyf"])
+    scale = font["head"].unitsPerEm / source["head"].unitsPerEm
+    imported = Glyph()
+    imported.numberOfContours = len(end_points)
+    imported.coordinates = GlyphCoordinates([
+        (otRound(x * scale), otRound(y * scale)) for x, y in coords
+    ])
+    imported.endPtsOfContours = list(end_points)
+    imported.flags = array("B", flags)
+    imported.program = ttProgram.Program()
+    imported.recalcBounds(font["glyf"])
+    advance = otRound(source["hmtx"].metrics[glyph_name][0] * scale)
+    font["glyf"][glyph_name] = imported
+    font["hmtx"].metrics[glyph_name] = (advance, imported.xMin)
+    if "vmtx" in font:
+        font["vmtx"].metrics[glyph_name] = (1000, 0)
 
 
 def build_weight(weight, style):
@@ -172,33 +196,28 @@ def build_weight(weight, style):
     glyf = font["glyf"]
     order = list(font.getGlyphOrder())
 
-    new_names = import_interrobang(font)
+    import_interrobang(font, weight)
     # import 直接写了 glyf.glyphs 但可能未更新 glyphOrder；
     # 以「实际 glyphs 键」为准重建（不能再用返回名拼接——可能重复）
     glyph_keys = list(glyf.glyphs.keys())
     font.setGlyphOrder(glyph_keys)
     glyf.glyphOrder = glyph_keys
     order = glyph_keys
-    for name in new_names:
-        if ITALIC:
-            shear_glyph(font, name)
-
-    # 2) Th 连字：从 Hanken 源 VF 提取 T_h（静态实例会被 instancer 裁剪，
-    #    VF 的 glyf 是默认位置轮廓，组件 T/h 在 Hanlink 里都存在）
+    # 2) Th 连字：从 Hanken 源 VF 的对应字重提取 T_h。
     th_vf = HANKEN_VF / (f"HankenGrotesk-Italic-VariableFont_wght.ttf" if ITALIC else f"HankenGrotesk-VariableFont_wght.ttf")
     if th_vf.exists() and "T_h" not in order:
-        hf = TTFont(th_vf)
+        hanken_variable = TTFont(th_vf)
+        hf = instantiateVariableFont(
+            hanken_variable, {"wght": weight},
+            inplace=False, optimize=True, static=True,
+        )
+        hanken_variable.close()
         if "T_h" in hf.getGlyphOrder():
-            font["glyf"]["T_h"] = deepcopy(hf["glyf"]["T_h"])
-            font["hmtx"].metrics["T_h"] = hf["hmtx"].metrics["T_h"]
-            if "vmtx" in font:
-                font["vmtx"].metrics["T_h"] = (1000, 0)
+            import_hanken_ligature(font, hf, "T_h")
             # glyf.__setitem__ 在部分 fontTools 版本会自动把新名字追加进
             # glyphOrder；这里防御式去重，避免双重 append 导致 save 断言失败
             if "T_h" not in order:
                 order.append("T_h")
-            if ITALIC:
-                shear_glyph(font, "T_h")
         hf.close()
     font.setGlyphOrder(order)
     glyf.glyphOrder = order
@@ -266,6 +285,7 @@ def build_weight(weight, style):
 
 
 if __name__ == "__main__":
+    validate_inter_source()
     only = os.environ.get("HANLINK_ONLY_WEIGHT")
     selected = WEIGHTS if not only else {int(only): WEIGHTS[int(only)]}
     for w, s in selected.items():
