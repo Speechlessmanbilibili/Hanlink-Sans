@@ -169,6 +169,19 @@ def import_interrobang(font, weight):
     return ["interrobang.uni203D", "interrobang.full"]
 
 
+def map_literal_interrobang(font):
+    """Map literal U+203D to the same half-width glyph used by ?!/!? liga."""
+    unicode_tables = [table for table in font["cmap"].tables if table.isUnicode()]
+    if not unicode_tables:
+        raise AssertionError("font has no Unicode cmap subtable")
+    for table in unicode_tables:
+        existing = table.cmap.get(0x203D)
+        if existing not in (None, "interrobang.uni203D"):
+            raise AssertionError((hex(0x203D), "unexpected existing cmap target", existing))
+        table.cmap[0x203D] = "interrobang.uni203D"
+    assert font.getBestCmap()[0x203D] == "interrobang.uni203D"
+
+
 def import_hanken_ligature(font, source, glyph_name):
     glyph = source["glyf"][glyph_name]
     coords, end_points, flags = glyph.getCoordinates(source["glyf"])
@@ -221,6 +234,7 @@ def build_weight(weight, style):
         hf.close()
     font.setGlyphOrder(order)
     glyf.glyphOrder = order
+    map_literal_interrobang(font)
 
     # 3) liga：?! -> ‽、？！-> 全宽‽、T+h -> T_h 全部默认开启
     gsub = font["GSUB"].table

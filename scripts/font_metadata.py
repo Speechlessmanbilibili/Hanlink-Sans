@@ -1,5 +1,5 @@
-VERSION = "1.210"
-FONT_REVISION = 1.21
+VERSION = "1.220"
+FONT_REVISION = 1.22
 UNIQUE_ID_VENDOR = "SilentPerson"
 OS2_VENDOR_ID = "    "
 
@@ -59,8 +59,10 @@ def apply_binary_metadata(font):
     font["head"].fontRevision = FONT_REVISION
 
 
-def audit_metadata(font, unique_id):
+def audit_metadata(font, unique_id, overrides=None):
     expected = project_names(unique_id)
+    if overrides:
+        expected.update(overrides)
     for name_id, value in expected.items():
         record = font["name"].getName(name_id, 3, 1, 0x409)
         assert record is not None, (name_id, "missing Windows English metadata")

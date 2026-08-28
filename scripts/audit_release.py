@@ -7,6 +7,7 @@ from language_systems import (
     WESTERN_SCRIPT_TAGS,
 )
 from font_metadata import audit_metadata
+from build_interrobang import INTER_LEGAL
 
 DASHES=(0x2014,0x2E3A,0x2E3B)
 HANKEN_CORE={'aalt','case','ccmp','dlig','dnom','frac','liga','numr','ordn','ss01','ss02','ss03','sups'}
@@ -57,11 +58,19 @@ def _glyph_signature(font,glyph):
 
 def audit(path):
     f=TTFont(path); cmap=f.getBestCmap()
+    interrobang='Interrobang' in path.name
     if 'fvar' in f:
-        unique_id='HanlinkSans-Italic-VF' if 'Italic' in path.name else 'HanlinkSans-VF'
+        if interrobang:
+            unique_id='HanlinkSansInterrobang-Italic-VF' if 'Italic' in path.name else 'HanlinkSansInterrobang-VF'
+        else:
+            unique_id='HanlinkSans-Italic-VF' if 'Italic' in path.name else 'HanlinkSans-VF'
     else:
         unique_id=path.stem
-    audit_metadata(f,unique_id)
+    audit_metadata(f,unique_id,INTER_LEGAL if interrobang else None)
+    if interrobang:
+        assert 0x203D in cmap and cmap[0x203D] in f.getGlyphOrder(),(path,'literal U+203D cmap missing or incorrect')
+    else:
+        assert 0x203D not in cmap,(path,'standard family must not gain the optional U+203D mapping')
     assert 'vhea' in f and 'vmtx' in f
     assert 'prep' in f, (path, 'missing shared upstream TrueType prep program')
     assert set(('DFLT','latn','hani','kana','grek','cyrl','bopo')) <= {sr.ScriptTag for sr in f['GSUB'].table.ScriptList.ScriptRecord}

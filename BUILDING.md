@@ -4,7 +4,7 @@ Hanlink Sans is built from three OFL-licensed upstream font families. Noto Sans 
 
 ## Active release scope
 
-The active and recommended build is **1.210 / v1.2.1**. The v1.3.x regional
+The active and recommended build is **1.220 / v1.2.2**. The v1.3.x regional
 ideograph and full-Hangul experiments remain in Git history, but they are not
 part of the stable build because their variable-font volume triggers incorrect
 Bold rendering in Microsoft Office through Windows GDI. The stable pipeline
@@ -18,7 +18,7 @@ python scripts/fetch_sources.py
 
 This downloads the pinned Google Fonts variable TTFs into gitignored `sources/`, verifies SHA-256, and generates all nine static source instances locally.
 
-Build CJK Punct Bridge v1.3.2 in a sibling `CJK-Punct-Bridge` directory, or set `HANLINK_BRIDGE_DIR` to that checkout.
+Build CJK Punct Bridge v1.3.3 in a sibling `CJK-Punct-Bridge` directory, or set `HANLINK_BRIDGE_DIR` to that checkout.
 
 ## 2. Build and verify
 
@@ -85,7 +85,7 @@ like the pinned Hanken Grotesk release (`HankenGrotesk[wght].ttf` +
 
 Place the hash-pinned Inter 4.001 files recorded in `SOURCES.md` under
 `sources/inter/`, or set `INTER_VF` explicitly for each pass. Build `Hanlink
-?!` only after all eighteen v1.2.1 Hanlink static faces exist:
+?!` only after all eighteen v1.2.2 Hanlink static faces exist:
 
 ```bash
 INTER_VF=sources/inter/InterVariable.ttf python scripts/build_interrobang.py
@@ -99,6 +99,10 @@ For every static weight, `build_interrobang.py` instantiates both Inter's
 the true Inter and Hanken italic sources. Reusing the default 400 outline for
 every master is forbidden because Inter's `U+203D` coordinates, bounds, and
 advance width all vary across the weight axis.
+
+The optional family also maps literal `U+203D` directly to that same half-width
+weight-matched glyph. The standard Hanlink Sans family deliberately does not
+gain this mapping.
 
 The variable build verifies the `wght` axis and nine named instances, compares
 100/400/900 instances with their static masters, requires distinct `U+203D`
