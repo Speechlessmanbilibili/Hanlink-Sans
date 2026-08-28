@@ -8,7 +8,7 @@ The result is a single family that works in browsers, design software, and Micro
 
 ## Release status
 
-**v1.2.1 is the current recommended stable release and active build scope.**
+**v1.2.2 is the current recommended stable release and active build scope.**
 
 The `v1.3.0`, `v1.3.1`, and `v1.3.2` tags, release assets, source history,
 and feature descriptions are retained for reference, but those releases are
@@ -32,18 +32,17 @@ has been deleted.
 | Default and Simplified Chinese punctuation | Google Fonts Noto Sans SC, with Zhudou-derived CJK dashes |
 | Traditional Chinese, Japanese, and Korean punctuation | Corresponding Google Fonts Noto Sans regional sources through CJK Punct Bridge |
 | Explicit Western-language punctuation | Hanken Grotesk for all 46 shared punctuation characters |
+| `!`, `?`, `¡`, `¿`, `！`, `？` | Inter 4.001, matched by weight and posture; full-width forms retain 1000-unit advance |
 
 ## Download
 
 Download the recommended stable release from
-[GitHub Releases v1.2.1](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.1).
+[GitHub Releases v1.2.2](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.2).
 
 | Package | Contents | Best for |
 | --- | --- | --- |
-| `Hanlink-Sans-v1.2.1-Static.zip` | Eighteen TTF faces: nine upright weights plus nine italics, Thin 100 through Black 900 | Windows, Word/Office, and applications with conservative variable-font support |
-| `Hanlink-Sans-v1.2.1-Variable.zip` | Two variable TTFs with `wght` 100–900, default 400: upright and italic | Modern browsers and applications with reliable variable-font support |
-| `Hanlink-Interrobang-v1.2.1-Static.zip` | Optional `Hanlink ?!` family, eighteen static TTF faces | Office-compatible optional ligature family |
-| `Hanlink-Interrobang-v1.2.1-Variable.zip` | Optional `Hanlink ?!` upright and italic variable TTFs | Applications with reliable variable-font support |
+| `Hanlink-Sans-v1.2.2-Static.zip` | Eighteen TTF faces: nine upright weights plus nine italics, Thin 100 through Black 900 | Windows, Word/Office, and applications with conservative variable-font support |
+| `Hanlink-Sans-v1.2.2-Variable.zip` | Two variable TTFs with `wght` 100–900, default 400: upright and italic | Modern browsers and applications with reliable variable-font support |
 
 The italic family uses the same release layout as the pinned Hanken Grotesk
 upstream: upright and italic are separate single-axis variable fonts sharing
@@ -57,22 +56,9 @@ The static family uses Office-compatible legacy weight linking for non-Regular/B
 
 ## Hanlink ?!
 
-**Hanlink ?!** is the ligature variant built from the same v1.2.1 static
-masters. Its default `liga` behavior turns `?!`, `!?`, `？！`, and `！？` into
-an interrobang form and enables the Hanken `T+h` ligature. The `U+203D`
-outline comes from pinned Inter 4.001 upright/italic variable sources and is
-instantiated at each matching weight, so Thin, Regular, Bold, and Black do not
-reuse one fixed outline.
-
-| Output | Contents |
-| --- | --- |
-| `fonts-interrobang/static/` | Nine upright and nine italic static faces |
-| `HanlinkSansInterrobang-Variable.ttf` | Upright `wght` 100–900 |
-| `HanlinkSansInterrobang-Italic-Variable.ttf` | Italic `wght` 100–900 |
-
-The `?!` variable build rejects a `gvar` table at or above 64 MiB and verifies
-its named instances against the corresponding static masters before accepting
-the output.
+The optional interrobang family is maintained and released independently at
+[Speechlessmanbilibili/Hanlink-Interrobang](https://github.com/Speechlessmanbilibili/Hanlink-Interrobang).
+This repository contains only the standard Hanlink Sans release.
 
 ## Use
 

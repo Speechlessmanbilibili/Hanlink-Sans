@@ -57,6 +57,10 @@ def _glyph_signature(font,glyph):
 
 def audit(path):
     f=TTFont(path); cmap=f.getBestCmap()
+    for cp in (0x21,0x3F,0xA1,0xBF,0xFF01,0xFF1F):
+        assert cp in cmap,(path,hex(cp),'missing Inter punctuation coverage')
+    assert f['hmtx'].metrics[cmap[0xFF01]][0]==1000
+    assert f['hmtx'].metrics[cmap[0xFF1F]][0]==1000
     if 'fvar' in f:
         unique_id='HanlinkSans-Italic-VF' if 'Italic' in path.name else 'HanlinkSans-VF'
     else:
@@ -139,6 +143,7 @@ def audit_hanken_provenance(path,source_path):
         assert _glyph_signature(f,cmap[cp])==_glyph_signature(h,hcmap[cp]),hex(cp)
     locl=_single_maps(f['GSUB'].table,_langsys(f['GSUB'].table,'latn','ENG '),'locl')
     for cp in HANKEN_SHARED_PUNCTUATION:
+        if cp in (0x21,0x3F,0xA1,0xBF): continue
         assert _glyph_signature(f,locl[cmap[cp]])==_glyph_signature(h,hcmap[cp]),hex(cp)
     f.close();h.close()
 

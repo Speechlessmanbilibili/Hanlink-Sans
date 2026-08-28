@@ -1,5 +1,10 @@
 # FONTLOG
 
+## 1.220 / v1.2.2 — 2026-08-28
+
+- Replaced `!`, `?`, `¡`, and `¿` with weight- and posture-matched Inter 4.001 outlines.
+- Replaced full-width `！` and `？` with the corresponding Inter outlines on a 1000-unit advance, keeping half-width, inverted, and full-width forms visually consistent.
+
 ## 1.210 / v1.2.1 — 2026-08-27
 
 - Restored the v1.2 build scope as the recommended stable line and advanced it to **1.210 / v1.2.1** without deleting any later tag, commit, release asset, or historical description.

@@ -11,7 +11,7 @@ Bridge 提供按语言切换的区域标点。
 
 ## 版本状态
 
-**v1.2.1 是当前推荐的稳定版，也是主分支当前采用的构建范围。**
+**v1.2.2 是当前推荐的稳定版，也是主分支当前采用的构建范围。**
 
 `v1.3.0`、`v1.3.1`、`v1.3.2` 的标签、Release 文件、提交历史与功能说明
 全部保留，但这些版本现归类为实验版，并已撤回稳定版推荐。v1.3 的区域字形
@@ -47,22 +47,21 @@ v1.3 静态字体未复现相同的变量字体故障，但 v1.3 整条版本线
 | 粤语字 | 常用粤语书写字（嘅、啲、嚟、咗、喺…） |
 | 注音符号 | 43 个注音符号完整覆盖 |
 | CJK 标点 | 经 CJK Punct Bridge 提供 Noto Sans SC/TC/JP/KR 区域形式；中文破折号（`U+2014` 等）来自煮豆黑体 |
-| 西文标点 | 46 个共享标点字符全部使用 Hanken Grotesk |
+| 西文标点 | 共享标点通常使用 Hanken Grotesk；`!`、`?`、`¡`、`¿` 统一改用 Inter 4.001 |
+| 全宽问号/感叹号 | `！`、`？` 使用同字重/姿态的 Inter 轮廓，保持 1000 全宽 advance |
 
 当前 v1.2 稳定构建不包含 v1.3 的区域汉字扩展与完整谚文扩展；这些实验功能
 的说明保留在下方历史章节和 [FONTLOG.md](FONTLOG.md) 中。
 
 ## 下载
 
-从 [GitHub Releases v1.2.1](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.1)
+从 [GitHub Releases v1.2.2](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.2)
 下载当前推荐稳定版。
 
 | 安装包 | 内容 | 适用场景 |
 | --- | --- | --- |
-| `Hanlink-Sans-v1.2.1-Static.zip` | 十八个 TTF：九个正体 + 九个斜体，Thin 100 至 Black 900 | Windows、Word/Office，以及对变量字体支持较保守的软件 |
-| `Hanlink-Sans-v1.2.1-Variable.zip` | 两个可变 TTF：正体与斜体，`wght` 100–900，默认 400 | 对变量字体支持可靠的浏览器与设计软件 |
-| `Hanlink-Interrobang-v1.2.1-Static.zip` | 可选 `Hanlink ?!` 家族，十八个静态 TTF | 兼容 Office 的可选连字家族 |
-| `Hanlink-Interrobang-v1.2.1-Variable.zip` | 可选 `Hanlink ?!` 正体与斜体变量 TTF | 对变量字体支持可靠的软件 |
+| `Hanlink-Sans-v1.2.2-Static.zip` | 十八个 TTF：九个正体 + 九个斜体，Thin 100 至 Black 900 | Windows、Word/Office，以及对变量字体支持较保守的软件 |
+| `Hanlink-Sans-v1.2.2-Variable.zip` | 两个可变 TTF：正体与斜体，`wght` 100–900，默认 400 | 对变量字体支持可靠的浏览器与设计软件 |
 
 斜体家族沿用 Hanken Grotesk 的发布形式：正体与斜体是各自独立的单轴可变
 字体，共享 **Hanlink Sans** 家族名。
@@ -75,20 +74,9 @@ v1.3 静态字体未复现相同的变量字体故障，但 v1.3 整条版本线
 
 ## Hanlink ?!
 
-**Hanlink ?!** 是从同一套 v1.2.1 静态母版构建的连字变体。默认 `liga`
-会把 `?!`、`!?`、`？！`、`！？` 合成为 interrobang 形式，并启用 Hanken
-的 `T+h` 连字。`U+203D` 轮廓来自固定哈希的 Inter 4.001 正体/斜体变量
-源，并在每个母版上按对应 `wght` 实例化，因此 Thin、Regular、Bold、Black
-不会重复使用同一个固定轮廓。
-
-| 输出 | 内容 |
-| --- | --- |
-| `fonts-interrobang/static/` | 九个正体与九个斜体静态字面 |
-| `HanlinkSansInterrobang-Variable.ttf` | 正体 `wght` 100–900 |
-| `HanlinkSansInterrobang-Italic-Variable.ttf` | 斜体 `wght` 100–900 |
-
-`?!` 变量构建会拒绝大于等于 64 MiB 的 `gvar` 表，并将变量字体命名实例
-与对应静态母版逐一核对。
+可选的 interrobang 家族已经在独立仓库
+[Speechlessmanbilibili/Hanlink-Interrobang](https://github.com/Speechlessmanbilibili/Hanlink-Interrobang)
+维护和发布；本仓库只发布 Hanlink Sans 标准版。
 
 ## 使用
 

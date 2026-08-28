@@ -9,6 +9,7 @@ from fontTools.merge import Merger,computeMegaGlyphOrder
 from fontTools.otlLib.builder import buildStatTable
 from layout_compat import fix_hanlink_language_systems
 from font_metadata import apply_binary_metadata, project_names
+from inter_punctuation import replace_public_punctuation
 
 REPO=Path(__file__).resolve().parents[1]
 WORKSPACE=Path(os.environ.get('HANLINK_BUILD_WORKSPACE', REPO.parent))
@@ -25,6 +26,7 @@ ITALIC=os.environ.get('HANLINK_ITALIC')=='1'
 SLANT_DEG=10.0
 SLANT=math.tan(math.radians(SLANT_DEG))
 HFILES={w:SRC/'hanken/static'/(f'HankenGrotesk-Italic-{s}.ttf' if ITALIC else f'HankenGrotesk-{s}.ttf') for w,s in WEIGHTS.items()}
+INTER_VF=SRC/'inter'/('InterVariable-Italic.ttf' if ITALIC else 'InterVariable.ttf')
 NFILES={w:SRC/'noto/static'/f'NotoSansSC-{s}.ttf' for w,s in WEIGHTS.items()}
 BFILES={w:BRIDGE/'fonts/static'/(f'CJKPunctBridge-Italic.ttf' if (ITALIC and w==400) else f'CJKPunctBridge-{s}{"Italic" if ITALIC else ""}.ttf') for w,s in WEIGHTS.items()}
 # Stable unicode split from Regular
@@ -174,7 +176,7 @@ def build(w,style):
     no=TTFont(NFILES[w]); hs=TTFont(HFILES[w]); fix_hanlink_language_systems(m,hanken_hidden,hs,no,noto_glyph_map,HALL-BC,BC)
     if 'prep' in hs:
         m['prep']=deepcopy(hs['prep'])
-    use_noto_metrics(m,no); set_names(m,w,style,italic=ITALIC)
+    use_noto_metrics(m,no); replace_public_punctuation(m,INTER_VF,w); set_names(m,w,style,italic=ITALIC)
     stat_axes=[dict(tag='wght',name='Weight',values=[dict(value=w,name=style,flags=0x2 if w==400 else 0)])]
     if ITALIC:
         stat_axes.append(dict(tag='ital',name='Italic',values=[dict(value=1,name='Italic')]))
