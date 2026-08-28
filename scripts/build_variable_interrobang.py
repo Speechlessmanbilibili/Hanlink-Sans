@@ -131,18 +131,12 @@ def validate_output(output, paths):
     for weight in WEIGHTS:
         static = TTFont(paths[weight])
         half_static, full_static = interrobang_targets(static)
-        assert static.getBestCmap().get(0x203D) == half_static, (
-            weight, "literal U+203D does not map to half-width interrobang"
-        )
         outline_signatures.append(glyph_signature(static, half_static))
         if weight in (100, 400, 900):
             instance = instantiateVariableFont(
                 variable, {"wght": weight}, inplace=False, optimize=True, static=True
             )
             half_instance, full_instance = interrobang_targets(instance)
-            assert instance.getBestCmap().get(0x203D) == half_instance, (
-                weight, "variable instance U+203D cmap mismatch"
-            )
             for variable_name, static_name in (
                 (half_instance, half_static), (full_instance, full_static),
             ):

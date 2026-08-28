@@ -2,16 +2,16 @@
 
 **语言：** [English](README.md) | 简体中文
 
-**Hanlink Sans** 是专为简体中文与西文混排设计的一套无衬线字体家族。它将
-Hanken Grotesk 的西文设计与 Noto Sans SC 的正文字符集/CJK 设计合并，再
-通过 CJK Punct Bridge 提供按语言切换的区域标点。
+**Hanlink Sans** 是专为中西文混排设计的一套无衬线字体家族。它将 Hanken
+Grotesk 的西文设计与 Noto Sans SC 的 CJK 覆盖合并，再通过 CJK Punct
+Bridge 提供按语言切换的区域标点。
 
 一个家族、一次字体选择，即可在浏览器、设计软件与 Microsoft Word/Office 中
 获得顺畅的中西文混排体验。
 
 ## 版本状态
 
-**v1.2.2 是当前推荐的稳定版，也是主分支当前采用的构建范围。**
+**v1.2.1 是当前推荐的稳定版，也是主分支当前采用的构建范围。**
 
 `v1.3.0`、`v1.3.1`、`v1.3.2` 的标签、Release 文件、提交历史与功能说明
 全部保留，但这些版本现归类为实验版，并已撤回稳定版推荐。v1.3 的区域字形
@@ -25,8 +25,8 @@ v1.3 静态字体未复现相同的变量字体故障，但 v1.3 整条版本线
 ## 特性
 
 - **中西文混排一个家族**——无需分别选择拉丁与 CJK 字体。
-- **Noto Sans SC 正文覆盖**——正文字符集来自固定的 Google Fonts Noto Sans
-  SC；不会额外合并 Noto Sans TC/JP/KR 的正文字符集（见[覆盖范围](#覆盖范围)）。
+- **GBK 对齐的汉字**——简体中文及大陆标准繁体字、日文假名、粤语字与注音
+  符号，来自固定的 Noto Sans CJK 源（见[覆盖范围](#覆盖范围)）。
 - **语言感知标点**——简体/繁体中文、日文、韩文标点按语言经 CJK Punct
   Bridge 切换；明确的西文语言使用 Hanken Grotesk 标点。
 - **拉丁真斜体、中文合成斜体**——拉丁斜体采用 Hanken Grotesk 官方斜体
@@ -37,14 +37,12 @@ v1.3 静态字体未复现相同的变量字体故障，但 v1.3 整条版本线
 
 ## 覆盖范围
 
-文本覆盖为 Hanken Grotesk 西文 + 固定的 Google Fonts Noto Sans SC 字符集。
-Noto Sans TC/JP/KR 只通过 CJK Punct Bridge 提供地区标点形式，不增加正文
-字符覆盖：
+文本覆盖为拉丁文 + 固定的 Noto Sans CJK 字符集：
 
 | 文字 / 分组 | 覆盖情况 |
 | --- | --- |
 | 拉丁字母与数字 `0`–`9` | Hanken Grotesk（数字在所有语言系统下均由 Hanken 提供） |
-| 汉字 | 继承 Noto Sans SC 的汉字字符集；不额外合并 TC/JP/KR 正文字库 |
+| 汉字 | GBK 对齐：简体中文与大陆标准繁体字 |
 | 日文假名 | 平假名与片假名（完整覆盖） |
 | 粤语字 | 常用粤语书写字（嘅、啲、嚟、咗、喺…） |
 | 注音符号 | 43 个注音符号完整覆盖 |
@@ -56,15 +54,15 @@ Noto Sans TC/JP/KR 只通过 CJK Punct Bridge 提供地区标点形式，不增�
 
 ## 下载
 
-从 [GitHub Releases v1.2.2](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.2)
+从 [GitHub Releases v1.2.1](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.1)
 下载当前推荐稳定版。
 
 | 安装包 | 内容 | 适用场景 |
 | --- | --- | --- |
-| `Hanlink-Sans-v1.2.2-Static.zip` | 十八个 TTF：九个正体 + 九个斜体，Thin 100 至 Black 900 | Windows、Word/Office，以及对变量字体支持较保守的软件 |
-| `Hanlink-Sans-v1.2.2-Variable.zip` | 两个可变 TTF：正体与斜体，`wght` 100–900，默认 400 | 对变量字体支持可靠的浏览器与设计软件 |
-| `Hanlink-Interrobang-v1.2.2-Static.zip` | 可选 `Hanlink ?!` 家族，十八个静态 TTF | 兼容 Office 的可选连字家族 |
-| `Hanlink-Interrobang-v1.2.2-Variable.zip` | 可选 `Hanlink ?!` 正体与斜体变量 TTF | 对变量字体支持可靠的软件 |
+| `Hanlink-Sans-v1.2.1-Static.zip` | 十八个 TTF：九个正体 + 九个斜体，Thin 100 至 Black 900 | Windows、Word/Office，以及对变量字体支持较保守的软件 |
+| `Hanlink-Sans-v1.2.1-Variable.zip` | 两个可变 TTF：正体与斜体，`wght` 100–900，默认 400 | 对变量字体支持可靠的浏览器与设计软件 |
+| `Hanlink-Interrobang-v1.2.1-Static.zip` | 可选 `Hanlink ?!` 家族，十八个静态 TTF | 兼容 Office 的可选连字家族 |
+| `Hanlink-Interrobang-v1.2.1-Variable.zip` | 可选 `Hanlink ?!` 正体与斜体变量 TTF | 对变量字体支持可靠的软件 |
 
 斜体家族沿用 Hanken Grotesk 的发布形式：正体与斜体是各自独立的单轴可变
 字体，共享 **Hanlink Sans** 家族名。
@@ -77,13 +75,11 @@ Noto Sans TC/JP/KR 只通过 CJK Punct Bridge 提供地区标点形式，不增�
 
 ## Hanlink ?!
 
-**Hanlink ?!** 是从同一套 v1.2.2 静态母版构建的连字变体。默认 `liga`
+**Hanlink ?!** 是从同一套 v1.2.1 静态母版构建的连字变体。默认 `liga`
 会把 `?!`、`!?`、`？！`、`！？` 合成为 interrobang 形式，并启用 Hanken
-的 `T+h` 连字。现在直接输入字面量 `U+203D`（`‽`）也会映射到 `?!`/`!?`
-使用的同一个半宽字形。轮廓来自固定哈希的 Inter 4.001 正体/斜体变量源，
-并在每个母版上按对应 `wght` 实例化，因此 Thin、Regular、Bold、Black 不会
-重复使用同一个固定轮廓。该直接映射只属于 **Hanlink ?!**；标准
-**Hanlink Sans** 的 `U+203D` 行为不变。
+的 `T+h` 连字。`U+203D` 轮廓来自固定哈希的 Inter 4.001 正体/斜体变量
+源，并在每个母版上按对应 `wght` 实例化，因此 Thin、Regular、Bold、Black
+不会重复使用同一个固定轮廓。
 
 | 输出 | 内容 |
 | --- | --- |

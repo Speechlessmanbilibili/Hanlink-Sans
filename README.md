@@ -2,13 +2,13 @@
 
 **Languages:** English | [简体中文](README.zh-CN.md)
 
-**Hanlink Sans is a unified sans-serif family for Simplified Chinese and Latin mixed text.** It combines Hanken Grotesk's Western design with the text repertoire and CJK design of Noto Sans SC, then adds language-aware regional punctuation through CJK Punct Bridge.
+**Hanlink Sans is a unified sans-serif family for Chinese and Latin mixed text.** It combines Hanken Grotesk's Western design with Noto Sans SC's CJK coverage, then adds language-aware regional punctuation through CJK Punct Bridge.
 
 The result is a single family that works in browsers, design software, and Microsoft Word/Office without requiring separate Latin and CJK font selections.
 
 ## Release status
 
-**v1.2.2 is the current recommended stable release and active build scope.**
+**v1.2.1 is the current recommended stable release and active build scope.**
 
 The `v1.3.0`, `v1.3.1`, and `v1.3.2` tags, release assets, source history,
 and feature descriptions are retained for reference, but those releases are
@@ -28,7 +28,7 @@ has been deleted.
 | --- | --- |
 | Latin letters | Google Fonts Hanken Grotesk |
 | ASCII digits `0`–`9` | Google Fonts Hanken Grotesk in every language system |
-| CJK text characters | Google Fonts Noto Sans SC only; TC/JP/KR text repertoires are not merged |
+| Han ideographs and other Noto-covered scripts | Google Fonts Noto Sans SC |
 | Default and Simplified Chinese punctuation | Google Fonts Noto Sans SC, with Zhudou-derived CJK dashes |
 | Traditional Chinese, Japanese, and Korean punctuation | Corresponding Google Fonts Noto Sans regional sources through CJK Punct Bridge |
 | Explicit Western-language punctuation | Hanken Grotesk for all 46 shared punctuation characters |
@@ -36,14 +36,14 @@ has been deleted.
 ## Download
 
 Download the recommended stable release from
-[GitHub Releases v1.2.2](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.2).
+[GitHub Releases v1.2.1](https://github.com/Speechlessmanbilibili/Hanlink-Sans/releases/tag/v1.2.1).
 
 | Package | Contents | Best for |
 | --- | --- | --- |
-| `Hanlink-Sans-v1.2.2-Static.zip` | Eighteen TTF faces: nine upright weights plus nine italics, Thin 100 through Black 900 | Windows, Word/Office, and applications with conservative variable-font support |
-| `Hanlink-Sans-v1.2.2-Variable.zip` | Two variable TTFs with `wght` 100–900, default 400: upright and italic | Modern browsers and applications with reliable variable-font support |
-| `Hanlink-Interrobang-v1.2.2-Static.zip` | Optional `Hanlink ?!` family, eighteen static TTF faces | Office-compatible optional ligature family |
-| `Hanlink-Interrobang-v1.2.2-Variable.zip` | Optional `Hanlink ?!` upright and italic variable TTFs | Applications with reliable variable-font support |
+| `Hanlink-Sans-v1.2.1-Static.zip` | Eighteen TTF faces: nine upright weights plus nine italics, Thin 100 through Black 900 | Windows, Word/Office, and applications with conservative variable-font support |
+| `Hanlink-Sans-v1.2.1-Variable.zip` | Two variable TTFs with `wght` 100–900, default 400: upright and italic | Modern browsers and applications with reliable variable-font support |
+| `Hanlink-Interrobang-v1.2.1-Static.zip` | Optional `Hanlink ?!` family, eighteen static TTF faces | Office-compatible optional ligature family |
+| `Hanlink-Interrobang-v1.2.1-Variable.zip` | Optional `Hanlink ?!` upright and italic variable TTFs | Applications with reliable variable-font support |
 
 The italic family uses the same release layout as the pinned Hanken Grotesk
 upstream: upright and italic are separate single-axis variable fonts sharing
@@ -57,14 +57,12 @@ The static family uses Office-compatible legacy weight linking for non-Regular/B
 
 ## Hanlink ?!
 
-**Hanlink ?!** is the ligature variant built from the same v1.2.2 static
+**Hanlink ?!** is the ligature variant built from the same v1.2.1 static
 masters. Its default `liga` behavior turns `?!`, `!?`, `？！`, and `！？` into
-an interrobang form and enables the Hanken `T+h` ligature. Literal `U+203D` (`‽`)
-is now mapped directly to the same half-width glyph used by `?!` and `!?`.
-The outline comes from pinned Inter 4.001 upright/italic variable sources and
-is instantiated at each matching weight, so Thin, Regular, Bold, and Black do
-not reuse one fixed outline. This direct mapping is exclusive to **Hanlink ?!**;
-the standard **Hanlink Sans** family remains unchanged at `U+203D`.
+an interrobang form and enables the Hanken `T+h` ligature. The `U+203D`
+outline comes from pinned Inter 4.001 upright/italic variable sources and is
+instantiated at each matching weight, so Thin, Regular, Bold, and Black do not
+reuse one fixed outline.
 
 | Output | Contents |
 | --- | --- |

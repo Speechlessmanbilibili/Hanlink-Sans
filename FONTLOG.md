@@ -1,12 +1,5 @@
 # FONTLOG
 
-## 1.220 / v1.2.2 — 2026-08-28
-
-- Added a literal `U+203D` cmap entry to every **Hanlink ?!** static and variable font, pointing to the same half-width, weight-matched Inter outline used by the `?!` and `!?` ligatures.
-- Kept the standard **Hanlink Sans** family unchanged at `U+203D`; the new direct-character mapping remains exclusive to the optional `?!` family.
-- Advanced all standard and optional release fonts to internal version 1.220 and extended release audits to verify the cmap boundary in static fonts and variable instances.
-- Updated the documentation to describe the current stable coverage accurately: text coverage comes from Noto Sans SC, while Noto TC/JP/KR contribute regional punctuation forms through CJK Punct Bridge rather than additional text repertoires.
-
 ## 1.210 / v1.2.1 — 2026-08-27
 
 - Restored the v1.2 build scope as the recommended stable line and advanced it to **1.210 / v1.2.1** without deleting any later tag, commit, release asset, or historical description.
